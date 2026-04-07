@@ -1,1 +1,4 @@
 .venv/
+docs/
+.env
+claude-code-source-code-full-main/

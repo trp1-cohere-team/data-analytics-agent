@@ -5,6 +5,7 @@ Never read os.environ directly in application code — use settings instead.
 """
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -23,6 +24,7 @@ class Settings(BaseSettings):
 
     # MCP Toolbox
     mcp_toolbox_url: str = "http://localhost:5000"
+    max_result_rows: int = Field(default=1000, alias="MAX_RESULT_ROWS")
 
     # Agent server
     agent_port: int = 8000

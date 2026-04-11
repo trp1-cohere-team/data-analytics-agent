@@ -183,51 +183,65 @@ class SchemaResponse(BaseModel):
 
 class SubQuery(BaseModel):
     """One sub-query targeting a specific database."""
-    db_type: str
-    db_name: str
-    query: str
-    params: dict[str, Any] = Field(default_factory=dict)
-    collection: str | None = None  # MongoDB only
+    id: str                                          # UUID unique within the plan
+    db_type: str                                     # "postgres" | "sqlite" | "mongodb" | "duckdb"
+    db_name: str                                     # Target database/file name for routing
+    query: str                                       # SQL string; ignored for MongoDB
+    pipeline: list[dict[str, Any]] | None = None    # MongoDB aggregation pipeline (pre-built by LLM)
+    collection: str | None = None                   # MongoDB collection name
+    join_key: str | None = None                     # Column name for cross-DB join; None if not part of a join
+    source_join_format: JoinKeyFormat | None = None  # Format of join key in this sub-query's DB
+    target_join_format: JoinKeyFormat | None = None  # Format expected by the joining sub-query
+    join_key_prefix: str | None = None              # PREFIXED_STRING prefix (e.g. "CUST")
+    join_key_width: int | None = None               # Zero-padding width
+    join_key_unresolvable: bool = False              # Set by JoinKeyResolver when format pair unsupported
 
 
 class MergeSpec(BaseModel):
     """Specification for merging sub-query results."""
-    join_key_left: str | None = None
-    join_key_right: str | None = None
-    merge_type: str = "inner"  # inner | left | union | aggregate
+    strategy: str = "UNION"                # "UNION" | "LEFT_JOIN" | "FIRST_ONLY"
+    join_key: str | None = None            # Column name to join on; required for LEFT_JOIN
+    left_db_type: str | None = None        # db_type whose result is the left side of LEFT_JOIN
 
 
 class QueryPlan(BaseModel):
     """Full query plan produced by the Orchestrator for MultiDBEngine."""
+    id: str                                          # Plan UUID
     sub_queries: list[SubQuery]
-    merge_spec: MergeSpec | None = None
-    join_key_info: dict[str, Any] = Field(default_factory=dict)
+    merge_spec: MergeSpec = Field(default_factory=MergeSpec)
 
 
 class SubQueryResult(BaseModel):
     """Result from one sub-query execution."""
-    db_type: str
-    db_name: str
-    rows: list[dict[str, Any]] = Field(default_factory=list)
-    columns: list[str] = Field(default_factory=list)
+    sub_query_id: str                                # References SubQuery.id
+    db_type: str                                     # Copied from SubQuery.db_type
+    rows: list[dict[str, Any]] = Field(default_factory=list)  # Always [] on failure
     row_count: int = 0
+    execution_time_ms: float = 0.0                   # Wall-clock time (0.0 on instant error)
+    error: str | None = None                         # Error description; None on success
+    row_cap_applied: bool = False                    # Stage-1 cap fired
+
+    @property
+    def is_success(self) -> bool:
+        return self.error is None
 
 
 class ExecutionResult(BaseModel):
     """Merged result from MultiDBEngine.execute_plan."""
-    rows: list[dict[str, Any]] = Field(default_factory=list)
-    columns: list[str] = Field(default_factory=list)
-    row_count: int = 0
-    sub_results: list[SubQueryResult] = Field(default_factory=list)
+    results: list[SubQueryResult] = Field(default_factory=list)   # One per SubQuery; preserves plan order
+    merged_rows: list[dict[str, Any]] = Field(default_factory=list)  # Output of ResultMerger
+    failures: list["ExecutionFailure"] = Field(default_factory=list)  # One per failed SubQueryResult
+    merge_row_cap_applied: bool = False              # Stage-2 cap fired
 
 
 class ExecutionFailure(BaseModel):
-    """Structured failure from MultiDBEngine — never raised, always returned."""
-    failure_type: str  # FailureType value
-    message: str
-    raw_error: str
-    db_type: str | None = None
-    query: str | None = None
+    """Structured failure for one sub-query — never raised, always returned."""
+    sub_query_id: str                                # References the failed SubQuery.id
+    db_type: str                                     # Which DB type failed
+    error_message: str                               # Human-readable error description
+    error_type: str                                  # "timeout" | "connection_error" | "rate_limit" |
+                                                     # "auth_error" | "schema_error" | "data_type_error" |
+                                                     # "query_error" | "unknown"
 
 
 # ---------------------------------------------------------------------------

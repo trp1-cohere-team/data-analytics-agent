@@ -11,9 +11,19 @@ Challenge deadlines (UTC):
 2. **Final submission:** Saturday, April 18, 2026 - 21:00 UTC
 
 ## Team Role Assignments
-- **Drivers:** Nurye, Kemeriya
-- **Intelligence Officers:** Yohannes, Amare
-- **Signal Corps:** Ephrata, Addisu
+- **Drivers:** Nurye, Kemerya (Kemeriya)
+- **Intelligence Officers:** Amare, Ephrata
+- **Signal Corps:** Yohanis (Yohannes), Addisu
+
+## Named Ownership Split (All 6 Members)
+| Member | Role | Primary ownership |
+| :---- | :---- | :---- |
+| Nurye | Driver | Agent runtime quality (`agent/`), query routing/self-correction fixes, technical sign-off before each gate |
+| Kemerya (Kemeriya) | Driver | Shared server reliability, benchmark run operations (`eval/`, `results/`), final submission packaging and reproducibility checks |
+| Amare | Intelligence Officer | KB architecture/evaluation layers (`kb/architecture`, `kb/evaluation`), probe failure taxonomy design (`probes/`), weekly ecosystem report |
+| Ephrata | Intelligence Officer | KB domain/corrections layers (`kb/domain`, `kb/corrections`), injection test evidence, failure-to-fix update loop with Drivers |
+| Yohanis (Yohannes) | Signal Corps | Daily internal status posts, X thread drafting/scheduling, communication of technical milestones from mob sessions |
+| Addisu | Signal Corps | Community participation log maintenance, long-form article drafting/publishing, final engagement portfolio and metrics |
 
 ## Operating Principles (Non-Negotiable)
 1. We run one daily mob session (minimum 1 hour, every working day).
@@ -57,7 +67,7 @@ Structure:
 - Prepare final submission package.
 
 ## Role Operating Charters (Challenge-Aligned)
-### Drivers (Nurye, Kemeriya)
+### Drivers (Nurye, Kemerya)
 Primary accountability:
 - Running codebase and deployment on shared server.
 - AI-DLC Inception document per sprint.
@@ -70,7 +80,7 @@ Mandatory outputs:
 3. Evaluation harness outputs with regression evidence.
 4. DAB results package for submission.
 
-### Intelligence Officers (Yohannes, Amare)
+### Intelligence Officers (Amare, Ephrata)
 Primary accountability:
 - Knowledge Base quality and injection readiness.
 - Shared utility library and adversarial probes.
@@ -84,7 +94,7 @@ Mandatory outputs:
 5. At least 15 adversarial probes across at least 3 DAB failure categories.
 6. Weekly ecosystem report for Monday mob session.
 
-### Signal Corps (Ephrata, Addisu)
+### Signal Corps (Yohanis, Addisu)
 Primary accountability:
 - Internal and external communication of technical progress.
 - Daily visibility and engagement logs.

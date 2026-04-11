@@ -2,6 +2,19 @@
 
 Baseline implementation for TRP1 Week 8-9 challenge deliverables.
 
+## Team Members and Roles
+- Drivers: Nurye, Kemerya
+- Intelligence Officers: Amare, Ephrata
+- Signal Corps: Yohanis, Addisu
+
+## Ownership Split
+- Nurye (Driver): Agent runtime quality, routing and self-correction fixes, technical sign-off for gates.
+- Kemerya (Driver): Shared server reliability, benchmark run operations, final submission packaging checks.
+- Amare (Intelligence Officer): KB architecture/evaluation updates, probe failure taxonomy, weekly ecosystem brief.
+- Ephrata (Intelligence Officer): KB domain/corrections updates, injection-test evidence, failure-to-fix loop with Drivers.
+- Yohanis (Signal Corps): Daily internal update posts, X thread drafting and scheduling, technical milestone communication.
+- Addisu (Signal Corps): Community participation log, long-form article publishing, final engagement portfolio and metrics.
+
 ## What is implemented now
 - A DAB-style agent entrypoint at `agent.data_agent.dab_interface.run_agent`.
 - Claude Code-style runtime architecture under `agent/runtime/`:
@@ -10,10 +23,14 @@ Baseline implementation for TRP1 Week 8-9 challenge deliverables.
   - `tooling.py`: explicit tool registry and policy boundaries.
   - `events.py`: durable append-only execution event log.
   - `memory.py`: explicit index/topic/session memory hierarchy.
-- OpenAI-style multi-layer context pipeline:
-  - Layer 1: schema + metadata context from connected databases.
-  - Layer 2: institutional/domain KB retrieval (question-aware).
-  - Layer 3: interaction memory (session memory + corrections log).
+- OpenAI-style 6-layer context pipeline:
+  - Layer 1: table usage (connected DBs + schema inventory + join-key hints).
+  - Layer 2: human annotations (question-aware retrieval from `kb/domain`).
+  - Layer 3: codex enrichment (question-aware code retrieval from agent/runtime/utils files).
+  - Layer 4: institutional knowledge (`agent/AGENT.md` + `kb/architecture` + `kb/evaluation`).
+  - Layer 5: interaction memory (session memory + corrections log).
+  - Layer 6: runtime context (routes, selected DBs, discovered tools, execution mode).
+- Automatic memory learnings extraction + topic distillation to keep long-running sessions useful.
 - OpenRouter integration with safe local fallback and trace output.
 - Multi-trial evaluation runner (`eval/run_trials.py`) and scorer (`eval/score_results.py`).
 - Starter Knowledge Base, planning docs, probe library, MCP tools config template.
@@ -53,6 +70,17 @@ Clone DAB:
 git clone --depth 1 https://github.com/ucbepic/DataAgentBench.git external/DataAgentBench
 ```
 
+Pull real dataset files (required; DAB uses Git LFS):
+```bash
+# if command not found: sudo apt-get update && sudo apt-get install -y git-lfs
+git lfs install
+cd external/DataAgentBench
+git lfs pull
+# required by DAB for PATENTS dataset:
+bash download.sh
+cd ../..
+```
+
 Smoke test on one query:
 ```bash
 python3 eval/run_dab_benchmark.py \
@@ -64,6 +92,8 @@ python3 eval/run_dab_benchmark.py \
   --output-submission results/dab_smoke_submission.json
 ```
 
+Note: `eval/run_dab_benchmark.py` now disables MCP by default (`AGENT_USE_MCP=0`) so DAB queries run against each query's local DB artifacts (`.db` / `.sql`). Use `--allow-mcp` only if you intentionally want toolbox-backed execution.
+
 Full benchmark (54 queries x 50 runs):
 ```bash
 python3 eval/run_dab_benchmark.py \
@@ -72,6 +102,12 @@ python3 eval/run_dab_benchmark.py \
   --output-detailed results/dab_full_50_detailed.json \
   --output-submission results/dab_full_50_submission.json
 ```
+
+If `total_valid_runs` is `0`, check these first:
+- `AGENT_OFFLINE_MODE` is `0` and `OPENROUTER_API_KEY` is set (offline mode only returns fallback summaries and usually scores `0`).
+- DAB files are not Git LFS pointers (`git lfs pull` completed successfully).
+- You did not force `--allow-mcp` by mistake for DAB runs.
+- If you see errors like `relation "public.*" does not exist`, rerun with default local mode (no `--allow-mcp`).
 
 ## Run tests
 ```bash

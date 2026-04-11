@@ -4,9 +4,9 @@ Reference playbook: `planning/ai_dlc_playbook.md`
 Team operating roadmap: `planning/team_operating_system_roadmap.md`
 
 ## Active Team Roles
-- Drivers: Nurye, Kemeriya
-- Intelligence Officers: Yohannes, Amare
-- Signal Corps: Ephrata, Addisu
+- Drivers: Nurye, Kemerya (Kemeriya)
+- Intelligence Officers: Amare, Ephrata
+- Signal Corps: Yohanis (Yohannes), Addisu
 
 ## Current state
 - Baseline scaffolding completed.

@@ -1,0 +1,42 @@
+sources:
+  postgres-db:
+    kind: postgres
+    host: ${POSTGRES_HOST:-localhost}
+    port: ${POSTGRES_PORT:-5432}
+    database: ${POSTGRES_DB:-oracle_forge}
+    user: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+
+  sqlite-db:
+    kind: sqlite
+    database: data/yelp.db
+
+  mongodb-db:
+    kind: mongodb
+    uri: ${MONGODB_URI:-mongodb://localhost:27017}
+    database: ${MONGODB_DB:-oracle_forge}
+
+  duckdb-db:
+    kind: duckdb
+    database: data/analytics.duckdb
+
+tools:
+  postgres_query:
+    kind: postgres-sql
+    source: postgres-db
+    description: Execute a SQL query against PostgreSQL
+
+  sqlite_query:
+    kind: sqlite-sql
+    source: sqlite-db
+    description: Execute a SQL query against SQLite
+
+  mongodb_aggregate:
+    kind: mongodb-aggregate
+    source: mongodb-db
+    description: Execute a MongoDB aggregation pipeline against a collection
+
+  duckdb_query:
+    kind: duckdb-sql
+    source: duckdb-db
+    description: Execute an analytical SQL query against DuckDB

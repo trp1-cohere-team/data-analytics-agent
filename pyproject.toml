@@ -1,0 +1,21 @@
+[project]
+name = "oracle-forge"
+version = "0.1.0"
+description = "The Oracle Forge — Data Analytics Agent"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = [
+    "integration: requires MCP Toolbox and databases running",
+]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["agent", "utils", "probes", "eval"]
+omit = ["tests/*"]

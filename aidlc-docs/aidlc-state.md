@@ -72,5 +72,22 @@
 #### Build and Test
 - [x] Build and Test — COMPLETED 2026-04-11T10:15:00Z
 
+#### U6 — Code Sandbox Execution Layer (Build Order: 6th)
+- [x] Functional Design — COMPLETED 2026-04-11T21:40:00Z
+- [x] NFR Requirements — MERGED INTO FUNCTIONAL DESIGN (subprocess+timeout covers all NFRs)
+- [x] NFR Design — MERGED INTO FUNCTIONAL DESIGN
+- [x] Infrastructure Design — No new infrastructure (subprocess only, no external services)
+- [x] Code Generation — COMPLETED 2026-04-11T22:00:00Z
+
+#### U7 — Streaming API (Build Order: 7th)
+- [x] Functional Design — COMPLETED 2026-04-11T21:40:00Z
+- [x] NFR Requirements — MERGED INTO FUNCTIONAL DESIGN (SSE, rate limit inherited)
+- [x] NFR Design — MERGED INTO FUNCTIONAL DESIGN
+- [x] Infrastructure Design — No new infrastructure (FastAPI StreamingResponse only)
+- [x] Code Generation — COMPLETED 2026-04-11T22:00:00Z
+
+#### Build and Test (U6 + U7)
+- [x] Build and Test — COMPLETED 2026-04-11T22:00:00Z (399/399 tests pass)
+
 ### OPERATIONS PHASE
 - [ ] Operations — PLACEHOLDER

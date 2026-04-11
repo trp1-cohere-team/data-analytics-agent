@@ -367,6 +367,47 @@ class SessionTranscript(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Code Sandbox (U6)
+# ---------------------------------------------------------------------------
+
+class SandboxResult(BaseModel):
+    """Result from CodeSandbox.execute()."""
+    result: Any = None          # Value assigned to `result` variable in user code
+    stdout: str = ""            # Captured print() output
+    error: str | None = None    # "ExceptionType: message" or None on success
+
+    @property
+    def is_success(self) -> bool:
+        return self.error is None
+
+
+# ---------------------------------------------------------------------------
+# Streaming API (U7)
+# ---------------------------------------------------------------------------
+
+class StreamEvent(BaseModel):
+    """One Server-Sent Event emitted by Orchestrator.run_stream()."""
+    type: str                        # "thought" | "action" | "final_answer" | "error"
+    iteration: int | None = None
+    # thought fields
+    action: str | None = None
+    confidence: float | None = None
+    # action fields
+    tool: str | None = None
+    success: bool | None = None
+    # final_answer fields
+    answer: Any = None
+    session_id: str | None = None
+    iterations_used: int | None = None
+    # error fields
+    message: str | None = None
+
+    def to_sse(self) -> str:
+        """Format as a Server-Sent Event string."""
+        return f"event: {self.type}\ndata: {self.model_dump_json(exclude_none=True)}\n\n"
+
+
+# ---------------------------------------------------------------------------
 # Evaluation
 # ---------------------------------------------------------------------------
 

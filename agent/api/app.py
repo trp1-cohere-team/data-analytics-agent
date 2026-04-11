@@ -17,7 +17,7 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -87,6 +87,7 @@ def create_app() -> FastAPI:
 
     # Routes
     app.add_api_route("/query", handle_query, methods=["POST"], response_model=QueryResponse)
+    app.add_api_route("/query/stream", handle_query_stream, methods=["POST"])
     app.add_api_route("/health", health_check, methods=["GET"], response_model=HealthResponse)
     app.add_api_route("/schema", get_schema_info, methods=["GET"], response_model=SchemaResponse)
 
@@ -126,6 +127,7 @@ async def lifespan(app: FastAPI):
     from agent.kb.knowledge_base import KnowledgeBase
     from agent.memory.manager import MemoryManager
     from agent.orchestrator.react_loop import Orchestrator
+    from agent.execution.sandbox import CodeSandbox
     from utils.key_rotator import KeyRotatingOpenAI
     from utils.multi_pass_retriever import MultiPassRetriever
     from utils.schema_introspector import SchemaIntrospector
@@ -173,6 +175,7 @@ async def lifespan(app: FastAPI):
         )
 
         correction_engine = CorrectionEngine(llm_client=llm_client, engine=engine)
+        sandbox = CodeSandbox()
 
         _orchestrator = Orchestrator(
             llm_client=llm_client,
@@ -181,6 +184,7 @@ async def lifespan(app: FastAPI):
             memory=_memory_manager,
             retriever=retriever,
             correction_engine=correction_engine,
+            sandbox=sandbox,
         )
 
         yield  # Server runs here
@@ -242,6 +246,44 @@ async def handle_query(request: Request, body: QueryRequest) -> QueryResponse:
         query_trace=result.query_trace,
         confidence=result.confidence,
         session_id=session_id,
+    )
+
+
+@_limiter.limit(settings.rate_limit)
+async def handle_query_stream(request: Request, body: QueryRequest) -> StreamingResponse:
+    """POST /query/stream — SSE streaming variant (U7, BR-U7-02).
+
+    Emits Server-Sent Events: thought, action, final_answer (error on failure).
+    POST /query is 100% unchanged (BR-U7-01).
+    """
+    session_id = body.session_id or str(uuid.uuid4())
+    context = await _context_manager.get_context_bundle(session_id)
+
+    async def _event_generator():
+        async for event in _orchestrator.run_stream(
+            query=body.question,
+            session_id=session_id,
+            context=context,
+            max_iterations=settings.max_react_iterations,
+            confidence_threshold=settings.confidence_threshold,
+        ):
+            yield event.to_sse()
+            # Best-effort session save after final_answer (BR-U7-07)
+            if event.type == "final_answer":
+                summary = f"Q: {body.question[:200]} A: {str(event.answer)[:200]}"
+                try:
+                    await _memory_manager.save_session(
+                        session_id,
+                        [],   # trace available in non-stream path only
+                        summary,
+                    )
+                except Exception:  # noqa: BLE001
+                    _logger.warning("stream_save_session_failed", extra={"session_id": session_id})
+
+    return StreamingResponse(
+        _event_generator(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 
 

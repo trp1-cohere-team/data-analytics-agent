@@ -1,5 +1,22 @@
 # AI-DLC Audit Log
 
+## Functional Design — U6 + U7 Answers Received
+**Timestamp**: 2026-04-11T21:35:00Z
+**User Input**: "am done"
+**U6 Answers**: Q1=A (subprocess), Q2=B (stdlib whitelist), Q3=B (5s), Q4=C (code+named vars), Q5=A (result+stdout+error), Q6=A (agent/execution/sandbox.py), Q7=D (transform_data), Q8=A (metadata-only log)
+**U7 Answers**: Q1=A (SSE), Q2=A (new /query/stream), Q3=B (thought+action+final_answer), Q4=C (SSE envelope), Q5=A (async generator run_stream()), Q6=A (emit error event + close), Q7=A (critical — /query 100% unchanged)
+**AI Response**: Generating functional design artifacts for U6 and U7.
+
+---
+
+## Gap Implementation — New Construction Units
+**Timestamp**: 2026-04-11T21:30:00Z
+**User Input**: "using ai dlc implement one and three"
+**AI Response**: Identified gaps 1 (Code Sandbox) and 3 (Streaming) from architecture diagram comparison. Entering CONSTRUCTION phase for two new units: U6 — Code Sandbox Execution Layer, U7 — Streaming API. Starting Functional Design stage for both units.
+**Context**: Brownfield addition to existing Oracle Forge codebase. Both units are new capabilities not present in current code.
+
+---
+
 ## Workspace Detection
 **Timestamp**: 2026-04-11T00:00:00Z
 **User Input**: "using ai-dlc i want you to implement the challenge based on the files provided in the challenge documents folders"

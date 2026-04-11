@@ -30,6 +30,7 @@ from agent.models import (
     OrchestratorResult,
     QueryPlan,
     ReactState,
+    StreamEvent,
     Thought,
     TraceStep,
 )
@@ -83,6 +84,7 @@ class Orchestrator:
         memory: Any,           # MemoryManager
         retriever: Any,        # MultiPassRetriever
         correction_engine: Any,  # CorrectionEngine
+        sandbox: Any = None,   # CodeSandbox (optional — U6)
         max_correction_attempts: int | None = None,
     ) -> None:
         self._llm = llm_client
@@ -91,6 +93,7 @@ class Orchestrator:
         self._memory = memory
         self._retriever = retriever
         self._correction_engine = correction_engine
+        self._sandbox = sandbox
         self._max_correction_attempts = (
             max_correction_attempts or settings.max_correction_attempts
         )
@@ -167,6 +170,90 @@ class Orchestrator:
         )
 
     # ------------------------------------------------------------------
+    # Public: run_stream() — U7 Streaming API
+    # ------------------------------------------------------------------
+
+    async def run_stream(
+        self,
+        query: str,
+        session_id: str,
+        context: ContextBundle,
+        max_iterations: int | None = None,
+        confidence_threshold: float | None = None,
+    ):
+        """Async generator variant of run() — yields StreamEvent per step (U7).
+
+        Emits: thought, action, final_answer (and error on exception).
+        Observations are NOT streamed (BR-U7-04).
+        run() is unchanged (BR-U7-01, BR-U7-09).
+        """
+        max_iter = max_iterations or settings.max_react_iterations
+        threshold = confidence_threshold or settings.confidence_threshold
+        state = ReactState(query=query, session_id=session_id)
+
+        try:
+            while not state.terminated and state.iteration < max_iter:
+                t0 = time.monotonic()
+                state.iteration += 1
+
+                thought = await self.think(state, context)
+                _log_think_step(session_id, state.iteration, thought.chosen_action)
+
+                # Yield thought event — metadata only (BR-U7-05 / SEC-U1-01)
+                yield StreamEvent(
+                    type="thought",
+                    iteration=state.iteration,
+                    action=thought.chosen_action,
+                    confidence=thought.confidence,
+                )
+
+                observation = await self.act(thought, context)
+                elapsed = (time.monotonic() - t0) * 1000
+                _log_act_step(session_id, state.iteration, observation.success, elapsed)
+
+                # Yield action event
+                yield StreamEvent(
+                    type="action",
+                    iteration=state.iteration,
+                    tool=thought.chosen_action,
+                    success=observation.success,
+                )
+
+                state = self.observe(observation, state)
+                state.history.append(TraceStep(
+                    iteration=state.iteration,
+                    thought=thought.reasoning[:500],
+                    action=thought.chosen_action,
+                    action_input=thought.action_input,
+                    observation=str(observation.result)[:500] if observation.success else str(observation.error)[:500],
+                    timestamp=time.time(),
+                ))
+
+                if thought.chosen_action == "FINAL_ANSWER":
+                    state.terminated = True
+                    state.final_answer = thought.action_input.get("answer")
+                    state.confidence = thought.confidence
+                    if state.confidence >= threshold:
+                        break
+
+            answer = state.final_answer if state.terminated else _COULD_NOT_ANSWER
+            confidence = state.confidence if state.terminated else 0.0
+            _log_run_complete(session_id, state.iteration, confidence)
+
+            yield StreamEvent(
+                type="final_answer",
+                answer=answer,
+                confidence=confidence,
+                session_id=session_id,
+                iterations_used=state.iteration,
+            )
+
+        except Exception as exc:  # noqa: BLE001
+            # BR-U7-06: emit error event, never expose stack trace
+            _logger.error("stream_error", extra={"session_id": session_id, "type": type(exc).__name__})
+            yield StreamEvent(type="error", message=type(exc).__name__)
+
+    # ------------------------------------------------------------------
     # think()
     # ------------------------------------------------------------------
 
@@ -209,6 +296,8 @@ class Orchestrator:
             return await self._act_extract_from_text(inp)
         if action == "resolve_join_keys":
             return await self._act_resolve_join_keys(inp)
+        if action == "transform_data":
+            return self._act_transform_data(inp)
         if action == "FINAL_ANSWER":
             return Observation(action="FINAL_ANSWER", result=inp.get("answer"), success=True)
 
@@ -257,6 +346,24 @@ class Orchestrator:
             return Observation(action="extract_from_text", result=raw.content, success=True)
         except Exception as exc:
             return Observation(action="extract_from_text", result=None, success=False, error=str(exc))
+
+    def _act_transform_data(self, inp: dict) -> Observation:
+        """Execute a Python snippet in the CodeSandbox (U6)."""
+        if self._sandbox is None:
+            return Observation(
+                action="transform_data", result=None, success=False,
+                error="CodeSandbox not configured",
+            )
+        code = inp.get("code", "")
+        variables = inp.get("variables", {})
+        result = self._sandbox.execute(code=code, variables=variables)
+        if result.is_success:
+            return Observation(
+                action="transform_data",
+                result={"result": result.result, "stdout": result.stdout},
+                success=True,
+            )
+        return Observation(action="transform_data", result=None, success=False, error=result.error)
 
     async def _act_resolve_join_keys(self, inp: dict) -> Observation:
         try:
@@ -365,6 +472,7 @@ class Orchestrator:
             "- search_kb: action_input = {\"query\": \"<search terms>\"}\n"
             "- extract_from_text: action_input = {\"text\": \"...\", \"question\": \"...\"}\n"
             "- resolve_join_keys: action_input = {\"plan\": <QueryPlan JSON>}\n"
+            "- transform_data: action_input = {\"code\": \"<python snippet>\", \"variables\": {\"name\": <value>}}\n"
             "- FINAL_ANSWER: action_input = {\"answer\": <your answer>, \"confidence\": <0.0-1.0>}\n\n"
             "Always respond with ONLY valid JSON:\n"
             "{\"reasoning\": \"<your reasoning>\", \"action\": \"<action>\", "

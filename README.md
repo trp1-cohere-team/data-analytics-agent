@@ -2,7 +2,8 @@
 
 > A production-grade ReAct-loop agent that answers natural language questions by querying
 > four heterogeneous databases (PostgreSQL, MongoDB, DuckDB, SQLite) through MCP Toolbox,
-> with automatic failure correction, knowledge-base-augmented context, and persistent session memory.
+> with automatic failure correction, knowledge-base-augmented context, code sandbox execution,
+> real-time SSE streaming, and persistent session memory.
 
 ---
 
@@ -15,6 +16,8 @@
 - [Configuration](#configuration)
 - [Running the Stack](#running-the-stack)
 - [API Reference](#api-reference)
+- [Code Sandbox](#code-sandbox)
+- [Streaming API](#streaming-api)
 - [Testing](#testing)
 - [Adversarial Probes](#adversarial-probes)
 - [Benchmarking](#benchmarking)
@@ -37,6 +40,8 @@ full query trace.
 | Multi-database routing | PostgreSQL, MongoDB, DuckDB, SQLite — automatically selects the right DB |
 | ReAct orchestration | Reason + Act loop, up to 10 iterations, confidence threshold 0.85 |
 | Tiered correction engine | 5 strategies: rule-based first, LLM corrector as last resort |
+| Code sandbox | Agent runs Python snippets in a sandboxed subprocess for data transformation |
+| Streaming API | `POST /query/stream` emits real-time SSE events as the agent reasons |
 | Knowledge base | 4-layer KB (architecture, domain, evaluation, corrections) injected into every request |
 | Session memory | Per-session transcript with consolidation via MemoryManager |
 | API key rotation | Automatically rotates OpenRouter keys on credit exhaustion (HTTP 402) |
@@ -49,31 +54,32 @@ full query trace.
 ## Architecture
 
 ```
-                         HTTP :8000
-                      ┌─────────────┐
-                      │  FastAPI    │  POST /query
-                      │  app.py     │  GET  /health
-                      └──────┬──────┘  GET  /schema
-                             │
-                    ┌────────▼────────┐
-                    │  Orchestrator   │  ReAct loop
-                    │  react_loop.py  │  max 10 iters
-                    └──┬─────┬────┬───┘  confidence ≥ 0.85
-                       │     │    │
-           ┌───────────▼─┐ ┌─▼──┐ ┌▼──────────────────┐
-           │ Context      │ │ KB │ │  CorrectionEngine  │
-           │ Manager      │ │    │ │  5 strategies      │
-           │ (3 layers)   │ │    │ │  rule → LLM        │
-           └───────┬──────┘ └────┘ └────────────────────┘
-                   │
-         ┌─────────▼────────────────────────────┐
-         │          MultiDBEngine               │
-         │    MCP Toolbox  :5000                │
-         └──┬────────┬──────────┬────────┬──────┘
-            │        │          │        │
-       [postgres] [mongodb]  [duckdb] [sqlite]
-       orders     reviews    analytics  yelp
-       customers  unstructured metrics  listings
+                    HTTP :8000
+          ┌───────────────────────────┐
+          │  FastAPI  app.py          │
+          │  POST /query              │
+          │  POST /query/stream (SSE) │
+          │  GET  /health             │
+          └───────────┬───────────────┘
+                      │
+             ┌────────▼────────┐
+             │  Orchestrator   │  ReAct loop
+             │  react_loop.py  │  max 10 iters
+             └─┬──────┬─────┬──┘  confidence ≥ 0.85
+               │      │     │
+    ┌──────────▼─┐ ┌──▼──┐ ┌▼──────────────────┐
+    │  Context   │ │  KB │ │  CorrectionEngine  │
+    │  Manager   │ │     │ │  5 strategies      │
+    │  (3 layers)│ │     │ │  rule → LLM        │
+    └──────┬─────┘ └─────┘ └────────────────────┘
+           │
+    ┌──────▼──────────────┬─────────────────────┐
+    │   MultiDBEngine     │    Code Sandbox      │
+    │   MCP Toolbox :5000 │    sandbox.py        │
+    └──┬──────┬────┬──┬───┘    subprocess + AST  │
+       │      │    │  │        5s timeout         │
+  [postgres][mongo][duck][sqlite]  [Python snippet]
+  orders  reviews analytics yelp   transform_data
 ```
 
 ### Data Routing
@@ -306,11 +312,95 @@ Returns the current cached database schema (all four databases).
 
 ---
 
+## Code Sandbox
+
+The agent can execute Python snippets to transform or extract data using the `transform_data` action.
+
+**How it works:**
+
+1. The LLM emits `{"action": "transform_data", "action_input": {"code": "...", "variables": {...}}}` in its ReAct JSON
+2. `CodeSandbox.execute()` runs the snippet in a **child subprocess** with a 5-second hard timeout
+3. An **AST pre-check** enforces a strict import whitelist before any subprocess is spawned
+4. The result, captured stdout, and any error are returned to the orchestrator as an observation
+
+**Allowed imports:** `json`, `re`, `math`, `datetime`, `collections`
+
+**Example — agent-generated usage:**
+```json
+{
+  "action": "transform_data",
+  "action_input": {
+    "code": "result = [r for r in rows if r['score'] > threshold]",
+    "variables": {
+      "rows": [{"id": 1, "score": 0.3}, {"id": 2, "score": 0.9}],
+      "threshold": 0.5
+    }
+  }
+}
+```
+
+**Output:**
+```json
+{"result": [{"id": 2, "score": 0.9}], "stdout": "", "error": null}
+```
+
+**Security constraints:**
+- Code length capped at 4096 characters
+- Non-whitelisted imports rejected at AST level (no subprocess spawned)
+- Metadata-only logging — code content and variable values are never logged
+- Temp script file always deleted in `finally` block
+
+---
+
+## Streaming API
+
+`POST /query/stream` streams agent progress as **Server-Sent Events (SSE)** so you see each reasoning step in real time instead of waiting for the final answer.
+
+**Endpoint:** `POST /query/stream`  
+**Request body:** same as `POST /query`  
+**Response:** `Content-Type: text/event-stream`
+
+**Event types:**
+
+| Event | Fields | When |
+|-------|--------|------|
+| `thought` | `iteration`, `action`, `confidence` | LLM picks next action |
+| `action` | `iteration`, `tool`, `success` | Tool call completes |
+| `final_answer` | `answer`, `confidence`, `session_id`, `iterations_used` | Agent finishes |
+| `error` | `message` (exception type only) | Unhandled error mid-stream |
+
+**Wire format (SSE):**
+```
+event: thought
+data: {"type":"thought","iteration":1,"action":"postgres_query","confidence":0.72}
+
+event: action
+data: {"type":"action","iteration":1,"tool":"postgres_query","success":true}
+
+event: final_answer
+data: {"type":"final_answer","answer":"Revenue was $42,000.","confidence":0.91,"session_id":"abc-123","iterations_used":2}
+
+```
+
+**curl example:**
+```bash
+curl -N -X POST http://localhost:8000/query/stream \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What is total revenue this quarter?", "session_id": "stream-001"}'
+```
+
+**Notes:**
+- `POST /query` is 100% unchanged — streaming is purely additive
+- Observation data (raw DB rows) is **not** streamed — only metadata
+- Rate limit (20 req/min) applies to `/query/stream` as well
+
+---
+
 ## Testing
 
 All unit tests run without any external services — every database and LLM call is mocked.
 
-### Unit tests — 373 tests, 14 test files
+### Unit tests — 399 tests, 16 test files
 
 ```bash
 # Run all unit tests
@@ -341,6 +431,8 @@ python -m pytest tests/unit/ --cov=agent --cov=utils --cov-report=term-missing
 | `test_probe_runner.py` | U5 — Probes | Probe execution, scoring |
 | `test_harness.py` | U4 — Eval | Benchmark pipeline, trial runner |
 | `test_scorers.py` | U4 — Eval | ExactMatch, FuzzyMatch, PBT |
+| `test_sandbox.py` | U6 — Sandbox | Execution, whitelist, timeout, error cases |
+| `test_streaming.py` | U7 — Streaming | SSE format, run_stream(), /query/stream endpoint |
 
 ### Integration tests — 11 tests (require MCP Toolbox + agent running)
 
@@ -434,7 +526,7 @@ data-analytics-agent/
 │   │   └── react_loop.py       # ReAct loop (Orchestrator)
 │   ├── context/                # 3-layer context assembly
 │   ├── correction/             # CorrectionEngine (5 strategies)
-│   ├── execution/              # MultiDBEngine + MCP client
+│   ├── execution/              # MultiDBEngine + MCP client + CodeSandbox
 │   ├── kb/                     # KnowledgeBase (reads kb/ dir)
 │   ├── memory/                 # MemoryManager (session transcripts)
 │   ├── models.py               # Pydantic models (all shared types)
@@ -447,7 +539,7 @@ data-analytics-agent/
 │   ├── join_key_utils.py       # Cross-DB join key format transforms
 │   ├── multi_pass_retriever.py # TF-IDF KB document retrieval
 │   ├── benchmark_wrapper.py    # Safe trial wrapper for eval harness
-│   └── key_rotator.py          # KeyRotatingOpenAI — auto key rotation
+│   └── key_rotator.py          # KeyRotatingOpenAI — auto key rotation on HTTP 402
 │
 ├── eval/                       # Evaluation harness
 │   ├── harness.py              # EvaluationHarness + FailSafeTrialRunner
@@ -466,7 +558,7 @@ data-analytics-agent/
 │   └── corrections/            # Known failure patterns + fixes
 │
 ├── tests/
-│   ├── unit/                   # 373 unit tests (no external services)
+│   ├── unit/                   # 399 unit tests (no external services)
 │   └── integration/            # 11 integration tests (require running stack)
 │
 ├── results/                    # Benchmark output
@@ -507,10 +599,15 @@ The agent is deployed on the shared EC2 instance:
 # Health check
 curl http://10.0.6.41:8000/health
 
-# Query
+# Query (blocking)
 curl -X POST http://10.0.6.41:8000/query \
   -H "Content-Type: application/json" \
   -d '{"question": "What are the top 5 products by revenue?", "session_id": "test-001"}'
+
+# Streaming query (SSE — see events in real time)
+curl -N -X POST http://10.0.6.41:8000/query/stream \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What are the top 5 products by revenue?", "session_id": "stream-001"}'
 
 # Schema
 curl http://10.0.6.41:8000/schema

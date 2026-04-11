@@ -35,6 +35,9 @@ INVARIANT_SETTINGS: dict[str, Any] = {
     "PBT-U3-04": settings(max_examples=100, deadline=timedelta(milliseconds=2000)),
     "PBT-U3-05": settings(max_examples=150, deadline=timedelta(milliseconds=500)),
     "PBT-U3-06": settings(max_examples=200, deadline=timedelta(milliseconds=500)),
+    # U4 invariants
+    "PBT-U4-01": settings(max_examples=500, deadline=timedelta(milliseconds=50)),
+    "PBT-U4-02": settings(max_examples=200, deadline=timedelta(milliseconds=500)),
 }
 
 
@@ -220,6 +223,44 @@ def session_memory_objects(draw: st.DrawFn) -> Any:
         successful_patterns=patterns,
         user_preferences=preferences,
         query_corrections=corrections,
+    )
+
+
+# ---------------------------------------------------------------------------
+# U4 strategies — numeric_values (PBT-U4-01) and benchmark_results (PBT-U4-02)
+# ---------------------------------------------------------------------------
+
+@st.composite
+def numeric_values(draw: st.DrawFn) -> tuple[Any, str]:
+    """Generate (value, str_repr) pairs for PBT-U4-01 ExactMatch self-consistency.
+
+    Property: ExactMatchScorer.score(str_repr, value) must always return True.
+    """
+    return draw(st.one_of(
+        st.integers(min_value=-(10 ** 9), max_value=10 ** 9).map(lambda x: (x, str(x))),
+        st.floats(
+            min_value=-1e9, max_value=1e9,
+            allow_nan=False, allow_infinity=False,
+        ).map(lambda x: (x, str(x))),
+    ))
+
+
+@st.composite
+def benchmark_results(draw: st.DrawFn) -> Any:
+    """Generate arbitrary BenchmarkResult instances for PBT-U4-02 ScoreLog round-trip."""
+    from agent.models import BenchmarkResult
+    return BenchmarkResult(
+        run_id=str(draw(st.uuids())),
+        timestamp=draw(st.floats(min_value=0.0, max_value=2e9, allow_nan=False, allow_infinity=False)),
+        agent_url="http://localhost:8000",
+        n_trials=draw(st.integers(min_value=1, max_value=10)),
+        total_queries=draw(st.integers(min_value=0, max_value=100)),
+        pass_at_1=draw(st.floats(min_value=0.0, max_value=1.0, allow_nan=False, allow_infinity=False)),
+        per_query_scores={},
+        notes=draw(st.text(
+            max_size=50,
+            alphabet=st.characters(whitelist_categories=("L", "N", "Zs")),
+        )),
     )
 
 

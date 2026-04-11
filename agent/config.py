@@ -43,6 +43,9 @@ class Settings(BaseSettings):
 
     # Memory
     memory_max_age_days: int = 7
+    memory_delete_after_consolidation: bool = Field(
+        default=True, alias="MEMORY_DELETE_AFTER_CONSOLIDATION"
+    )
 
     # Paths
     kb_dir: Path = Path("kb")

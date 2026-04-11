@@ -1,4 +1,4 @@
-"""Hypothesis strategy factory for U5 property-based tests.
+"""Hypothesis strategy factory for U5/U3 property-based tests.
 
 All custom @st.composite strategies and the InvariantRegistry are defined here.
 Test files import from this module — never redefine strategies locally.
@@ -19,11 +19,19 @@ from agent.models import JoinKeyFormat
 # ---------------------------------------------------------------------------
 
 INVARIANT_SETTINGS: dict[str, Any] = {
+    # U5 invariants
     "PBT-U5-01": settings(max_examples=200, deadline=timedelta(milliseconds=500)),
     "PBT-U5-02": settings(max_examples=200, deadline=timedelta(milliseconds=500)),
     "PBT-U5-03": settings(max_examples=100, deadline=timedelta(milliseconds=200)),
     "PBT-U5-04": settings(max_examples=100, deadline=timedelta(milliseconds=500)),
     "PBT-U5-05": settings(max_examples=150, deadline=timedelta(milliseconds=200)),
+    # U3 invariants
+    "PBT-U3-01": settings(max_examples=200, deadline=timedelta(milliseconds=500)),
+    "PBT-U3-02": settings(max_examples=100, deadline=timedelta(milliseconds=2000)),
+    "PBT-U3-03": settings(max_examples=150, deadline=timedelta(milliseconds=1000)),
+    "PBT-U3-04": settings(max_examples=100, deadline=timedelta(milliseconds=2000)),
+    "PBT-U3-05": settings(max_examples=150, deadline=timedelta(milliseconds=500)),
+    "PBT-U3-06": settings(max_examples=200, deadline=timedelta(milliseconds=500)),
 }
 
 
@@ -115,6 +123,81 @@ def correction_entries(draw: st.DrawFn) -> Any:
         fix_strategy=draw(st.sampled_from(fix_strategies)),
         attempt_number=draw(st.integers(min_value=1, max_value=3)),
         success=draw(st.booleans()),
+    )
+
+
+# ---------------------------------------------------------------------------
+# U3 strategies — SessionTranscript and SessionMemory (PBT-U3-04 through -06)
+# ---------------------------------------------------------------------------
+
+@st.composite
+def trace_steps(draw: st.DrawFn) -> Any:
+    """Generate a valid TraceStep for use inside SessionTranscript histories."""
+    from agent.models import TraceStep
+    actions = ["query_database", "search_kb", "extract_from_text", "resolve_join_keys", "FINAL_ANSWER"]
+    return TraceStep(
+        iteration=draw(st.integers(min_value=0, max_value=20)),
+        thought=draw(st.text(min_size=1, max_size=200, alphabet=st.characters(whitelist_categories=("L", "N", "Zs")))),
+        action=draw(st.sampled_from(actions)),
+        action_input={},
+        observation=draw(st.text(min_size=1, max_size=200, alphabet=st.characters(whitelist_categories=("L", "N", "Zs")))),
+        timestamp=draw(st.floats(min_value=1_600_000_000.0, max_value=2_000_000_000.0)),
+    )
+
+
+@st.composite
+def session_transcripts(draw: st.DrawFn) -> Any:
+    """Generate a valid SessionTranscript with realistic fields.
+
+    PBT-U3-04 / PBT-U3-05 / PBT-U3-06 invariant strategy.
+    session_id is a UUID string, timestamp is a valid epoch float,
+    history is a list[TraceStep], summary is a non-empty string.
+    """
+    from agent.models import SessionTranscript
+    history_steps = draw(st.lists(trace_steps(), min_size=0, max_size=10))
+    return SessionTranscript(
+        session_id=str(draw(st.uuids())),
+        timestamp=draw(st.floats(min_value=1_600_000_000.0, max_value=2_000_000_000.0)),
+        history=history_steps,
+        summary=draw(st.text(min_size=1, max_size=500, alphabet=st.characters(whitelist_categories=("L", "N", "Zs", "P")))),
+    )
+
+
+@st.composite
+def session_memory_objects(draw: st.DrawFn) -> Any:
+    """Generate a valid SessionMemory with realistic nested structures.
+
+    PBT-U3-06 round-trip strategy.
+    """
+    from agent.models import SessionMemory
+
+    def pattern_entry(d: st.DrawFn) -> dict[str, Any]:
+        return {
+            "session_id": str(d(st.uuids())),
+            "summary": d(st.text(min_size=1, max_size=100, alphabet=st.characters(whitelist_categories=("L", "N", "Zs")))),
+        }
+
+    def correction_entry(d: st.DrawFn) -> dict[str, Any]:
+        return {
+            "session_id": str(d(st.uuids())),
+            "corrections": d(st.lists(st.fixed_dictionaries({
+                "iteration": st.integers(min_value=0, max_value=20),
+                "action": st.sampled_from(["correct_query", "fix_syntax"]),
+                "observation": st.text(min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N", "Zs"))),
+            }), min_size=0, max_size=3)),
+        }
+
+    patterns = draw(st.lists(st.builds(pattern_entry, st.just(draw)), min_size=0, max_size=5))
+    corrections = draw(st.lists(st.builds(correction_entry, st.just(draw)), min_size=0, max_size=5))
+    preferences = draw(st.dictionaries(
+        st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("L", "N"))),
+        st.text(min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N", "Zs"))),
+        min_size=0, max_size=5,
+    ))
+    return SessionMemory(
+        successful_patterns=patterns,
+        user_preferences=preferences,
+        query_corrections=corrections,
     )
 
 

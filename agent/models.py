@@ -358,6 +358,14 @@ class SessionMemory(BaseModel):
     query_corrections: list[dict[str, Any]] = Field(default_factory=list)
 
 
+class SessionTranscript(BaseModel):
+    """Persisted record of one agent query session. Write-once."""
+    session_id: str                   # UUID — matches ReactState.session_id
+    timestamp: float                  # Unix epoch when saved
+    history: list[TraceStep]          # Full ReAct trace (Q6=C: raw list[TraceStep])
+    summary: str                      # Caller-provided text summary (Q6=C)
+
+
 # ---------------------------------------------------------------------------
 # Evaluation
 # ---------------------------------------------------------------------------

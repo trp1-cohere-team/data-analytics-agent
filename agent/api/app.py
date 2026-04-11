@@ -119,8 +119,6 @@ async def lifespan(app: FastAPI):
     """
     global _orchestrator, _context_manager, _memory_manager, _kb
 
-    import openai
-
     from agent.context.manager import ContextManager
     from agent.correction.engine import CorrectionEngine
     from agent.execution.engine import MultiDBEngine
@@ -128,17 +126,19 @@ async def lifespan(app: FastAPI):
     from agent.kb.knowledge_base import KnowledgeBase
     from agent.memory.manager import MemoryManager
     from agent.orchestrator.react_loop import Orchestrator
+    from utils.key_rotator import KeyRotatingOpenAI
     from utils.multi_pass_retriever import MultiPassRetriever
     from utils.schema_introspector import SchemaIntrospector
 
     # Warn on missing API key (NFR-U1-S2 / Q6=C)
-    if not settings.openrouter_api_key:
+    api_keys = settings.openrouter_api_keys
+    if not api_keys:
         _logger.warning("openrouter_api_key_missing — LLM calls will fail at runtime")
 
-    # LLM client
-    llm_client = openai.AsyncOpenAI(
+    # LLM client — key-rotating wrapper so benchmark survives credit exhaustion
+    llm_client = KeyRotatingOpenAI(
+        keys=api_keys or ["missing"],
         base_url=settings.openrouter_base_url,
-        api_key=settings.openrouter_api_key or "missing",
     )
 
     # U3: KB + Memory

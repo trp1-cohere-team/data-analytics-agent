@@ -19,6 +19,10 @@ class Settings(BaseSettings):
 
     # LLM
     openrouter_api_key: str = ""
+    # Comma-separated list of keys for automatic rotation on credit exhaustion.
+    # Takes precedence over openrouter_api_key when set.
+    # Example: OPENROUTER_API_KEYS=sk-or-key1,sk-or-key2,sk-or-key3
+    openrouter_api_keys_raw: str = ""
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
     openrouter_model: str = "openai/gpt-4o"
 
@@ -58,6 +62,20 @@ class Settings(BaseSettings):
     db_timeout_postgres: float = 2.5
     db_timeout_duckdb: float = 1.5
     db_timeout_sqlite: float = 1.0
+
+    @property
+    def openrouter_api_keys(self) -> list[str]:
+        """Return ordered list of API keys for rotation.
+
+        Priority:
+        1. OPENROUTER_API_KEYS (comma-separated) — multi-key rotation
+        2. OPENROUTER_API_KEY — single key fallback
+        """
+        if self.openrouter_api_keys_raw:
+            return [k.strip() for k in self.openrouter_api_keys_raw.split(",") if k.strip()]
+        if self.openrouter_api_key:
+            return [self.openrouter_api_key]
+        return []
 
     @property
     def db_timeouts(self) -> dict[str, float]:

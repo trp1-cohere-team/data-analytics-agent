@@ -1,6 +1,4 @@
 """Unit tests for agent/api/app.py and agent/api/middleware.py."""
-from __future__ import annotations
-
 import asyncio
 import json
 import uuid
@@ -13,9 +11,12 @@ from agent.models import (
     ContextBundle,
     CorrectionsContext,
     DomainContext,
+    HealthResponse,
     OrchestratorResult,
+    QueryRequest,
     QueryResponse,
     SchemaContext,
+    SchemaResponse,
     TraceStep,
 )
 
@@ -89,7 +90,6 @@ def _make_test_app():
     _app_module._context_manager = mock_context_manager
     _app_module._memory_manager = mock_memory
 
-    from agent.models import QueryRequest, HealthResponse, SchemaResponse
     from fastapi import Request
 
     @limiter.limit("20/minute")

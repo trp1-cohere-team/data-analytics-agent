@@ -79,7 +79,7 @@ def _compute_idf(corrections: list[CorrectionEntry]) -> dict[str, float]:
         for term in set(text.split()):
             doc_freq[term] += 1
 
-    return {term: math.log(n / (df + 1)) for term, df in doc_freq.items()}
+    return {term: math.log((n + 1) / (df + 1)) for term, df in doc_freq.items()}
 
 
 def _build_pass_queries(query: str) -> list[list[str]]:

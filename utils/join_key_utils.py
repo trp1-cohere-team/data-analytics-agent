@@ -142,6 +142,18 @@ def transform_key(
     if (source_fmt, target_fmt) in _UNSUPPORTED_TRANSFORMS:
         return None
 
+    # PREFIXED_STRING → PREFIXED_STRING (re-pad) — must run before identity check
+    if source_fmt == JoinKeyFormat.PREFIXED_STRING and target_fmt == JoinKeyFormat.PREFIXED_STRING:
+        if isinstance(value, str) and "-" in value:
+            pfx, digits = value.rsplit("-", 1)
+            try:
+                n = int(digits)
+                pad = str(n).zfill(width) if width else digits
+                return f"{pfx}-{pad}"
+            except ValueError:
+                return None
+        return None
+
     # Identity
     if source_fmt == target_fmt:
         return value
@@ -203,11 +215,26 @@ def build_transform_expression(
     """
     if (source_fmt, target_fmt) in _UNSUPPORTED_TRANSFORMS:
         return None
-    if source_fmt == target_fmt:
-        return source_column  # identity — no transformation needed
 
     col = source_column
     w = width or 5  # default zero-padding width
+
+    # PREFIXED_STRING → PREFIXED_STRING (re-pad) — must run before identity check
+    if source_fmt == JoinKeyFormat.PREFIXED_STRING and target_fmt == JoinKeyFormat.PREFIXED_STRING:
+        if db_type in ("postgres", "duckdb"):
+            return (
+                f"CONCAT(SPLIT_PART({col}, '-', 1), '-', "
+                f"LPAD(CAST(SPLIT_PART({col}, '-', 2) AS TEXT), {w}, '0'))"
+            )
+        if db_type == "sqlite":
+            return (
+                f"SUBSTR({col}, 1, INSTR({col}, '-')) || "
+                f"printf('%0{w}d', CAST(SUBSTR({col}, INSTR({col}, '-') + 1) AS INTEGER))"
+            )
+        return None  # mongodb not supported
+
+    if source_fmt == target_fmt:
+        return source_column  # identity — no transformation needed
 
     # PREFIXED_STRING → INTEGER
     if source_fmt == JoinKeyFormat.PREFIXED_STRING and target_fmt == JoinKeyFormat.INTEGER:
@@ -229,20 +256,6 @@ def build_transform_expression(
             return f"'{prefix}-' || printf('%0{w}d', {col})"
         if db_type == "mongodb":
             return f"{{$concat: ['{prefix}-', {{$substr: [{{$toString: '${col}'}}, 0, -1]}}]}}"
-        return None
-
-    # PREFIXED_STRING → PREFIXED_STRING (re-pad)
-    if source_fmt == JoinKeyFormat.PREFIXED_STRING and target_fmt == JoinKeyFormat.PREFIXED_STRING:
-        if db_type in ("postgres", "duckdb"):
-            return (
-                f"CONCAT(SPLIT_PART({col}, '-', 1), '-', "
-                f"LPAD(CAST(SPLIT_PART({col}, '-', 2) AS TEXT), {w}, '0'))"
-            )
-        if db_type == "sqlite":
-            return (
-                f"SUBSTR({col}, 1, INSTR({col}, '-')) || "
-                f"printf('%0{w}d', CAST(SUBSTR({col}, INSTR({col}, '-') + 1) AS INTEGER))"
-            )
         return None
 
     return None

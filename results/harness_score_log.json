@@ -1,0 +1,47 @@
+[
+  {
+    "run": 1,
+    "date": "[DATE]",
+    "description": "Baseline — no KB documents injected",
+    "model": "openai/gpt-4o",
+    "queries_evaluated": 10,
+    "mean_score": 0.41,
+    "pass_rate": 0.20,
+    "scores_by_category": {
+      "ROUTING": 0.10,
+      "JOIN_KEY": 0.35,
+      "TEXT_EXTRACT": 0.50,
+      "DOMAIN_GAP": 0.42
+    }
+  },
+  {
+    "run": 2,
+    "date": "[DATE]",
+    "description": "Post KB injection — domain/ and architecture/ documents added",
+    "model": "openai/gpt-4o",
+    "queries_evaluated": 10,
+    "mean_score": 0.67,
+    "pass_rate": 0.50,
+    "scores_by_category": {
+      "ROUTING": 0.78,
+      "JOIN_KEY": 0.70,
+      "TEXT_EXTRACT": 0.58,
+      "DOMAIN_GAP": 0.42
+    }
+  },
+  {
+    "run": 3,
+    "date": "[DATE]",
+    "description": "Post all probe fixes — all 4 KB subdirs populated, correction engine tuned",
+    "model": "openai/gpt-4o",
+    "queries_evaluated": 15,
+    "mean_score": 0.84,
+    "pass_rate": 0.80,
+    "scores_by_category": {
+      "ROUTING": 0.95,
+      "JOIN_KEY": 0.90,
+      "TEXT_EXTRACT": 0.78,
+      "DOMAIN_GAP": 0.62
+    }
+  }
+]

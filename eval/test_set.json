@@ -1,0 +1,92 @@
+[
+  {
+    "id": "TS-001",
+    "question": "How many unique customers placed orders in the last 30 days?",
+    "expected_db": "postgres",
+    "expected_answer_type": "integer",
+    "expected_answer_hint": "COUNT(DISTINCT customer_id) from orders WHERE order_date >= NOW() - INTERVAL '30 days'",
+    "pass_threshold": 0.8,
+    "category": "AGGREGATION"
+  },
+  {
+    "id": "TS-002",
+    "question": "What is the average star rating across all restaurant reviews?",
+    "expected_db": "mongodb",
+    "expected_answer_type": "float",
+    "expected_answer_hint": "$avg on stars field in reviews collection",
+    "pass_threshold": 0.8,
+    "category": "AGGREGATION"
+  },
+  {
+    "id": "TS-003",
+    "question": "Which city has the most business listings?",
+    "expected_db": "sqlite",
+    "expected_answer_type": "string",
+    "expected_answer_hint": "GROUP BY city ORDER BY COUNT(*) DESC LIMIT 1 on Yelp business table",
+    "pass_threshold": 0.8,
+    "category": "ROUTING"
+  },
+  {
+    "id": "TS-004",
+    "question": "What is the pre-computed sentiment score for Italian restaurants?",
+    "expected_db": "duckdb",
+    "expected_answer_type": "float",
+    "expected_answer_hint": "SELECT AVG(sentiment_score) FROM analytics WHERE category = 'Italian'",
+    "pass_threshold": 0.8,
+    "category": "ROUTING"
+  },
+  {
+    "id": "TS-005",
+    "question": "How many orders were placed by customers who also wrote reviews?",
+    "expected_db": "postgres+mongodb",
+    "expected_answer_type": "integer",
+    "expected_answer_hint": "Requires cross-DB join: customer IDs from PostgreSQL matched against reviewer IDs in MongoDB",
+    "pass_threshold": 0.7,
+    "category": "CROSS_DB"
+  },
+  {
+    "id": "TS-006",
+    "question": "List the top 5 products by total revenue last quarter.",
+    "expected_db": "postgres",
+    "expected_answer_type": "list",
+    "expected_answer_hint": "SELECT product_name, SUM(amount) FROM orders JOIN products GROUP BY product_name ORDER BY 2 DESC LIMIT 5",
+    "pass_threshold": 0.8,
+    "category": "AGGREGATION"
+  },
+  {
+    "id": "TS-007",
+    "question": "What percentage of businesses on Yelp have more than 100 reviews?",
+    "expected_db": "sqlite",
+    "expected_answer_type": "float",
+    "expected_answer_hint": "COUNT(review_count > 100) / COUNT(*) on business table",
+    "pass_threshold": 0.8,
+    "category": "AGGREGATION"
+  },
+  {
+    "id": "TS-008",
+    "question": "Show me businesses that are open on Sundays in Phoenix.",
+    "expected_db": "sqlite",
+    "expected_answer_type": "list",
+    "expected_answer_hint": "Filter on hours field for Sunday in Yelp business table WHERE city = 'Phoenix'",
+    "pass_threshold": 0.8,
+    "category": "FILTER"
+  },
+  {
+    "id": "TS-009",
+    "question": "What is the monthly trend of orders over the past 6 months?",
+    "expected_db": "postgres",
+    "expected_answer_type": "list",
+    "expected_answer_hint": "GROUP BY DATE_TRUNC('month', order_date) for last 6 months",
+    "pass_threshold": 0.8,
+    "category": "TIMESERIES"
+  },
+  {
+    "id": "TS-010",
+    "question": "Find reviews that mention 'excellent service' or 'great food'.",
+    "expected_db": "mongodb",
+    "expected_answer_type": "list",
+    "expected_answer_hint": "$regex or $text search on review text field in MongoDB",
+    "pass_threshold": 0.75,
+    "category": "TEXT_EXTRACT"
+  }
+]

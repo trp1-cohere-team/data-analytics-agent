@@ -161,7 +161,7 @@ class LLMJudgeScorer:
         )
         try:
             response = await client.chat.completions.create(
-                model=settings.OPENROUTER_MODEL,
+                model=settings.openrouter_model,
                 messages=[
                     {"role": "system", "content": _JUDGE_SYSTEM_PROMPT},
                     {"role": "user", "content": user_content},
@@ -462,8 +462,8 @@ class EvaluationHarness:
         runner = BenchmarkRunner()
         sem = asyncio.Semaphore(_AGENT_CONCURRENCY)  # Pattern 2: shared across all tasks
         llm_client = openai.AsyncOpenAI(
-            api_key=settings.OPENROUTER_API_KEY,  # SEC-U4-03: from env only
-            base_url=settings.OPENROUTER_BASE_URL,
+            api_key=settings.openrouter_api_key,  # SEC-U4-03: from env only
+            base_url=settings.openrouter_base_url,
         )
 
         async with aiohttp.ClientSession() as session:

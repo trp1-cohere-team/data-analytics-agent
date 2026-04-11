@@ -333,16 +333,20 @@ def test_pbt_u3_01_correction_entry_roundtrip(entry: CorrectionEntry):
 
 @given(entries=st.lists(correction_entries(), min_size=1, max_size=20))
 @INVARIANT_SETTINGS["PBT-U3-02"]
-def test_pbt_u3_02_append_only_count(tmp_path, entries: list[CorrectionEntry]):
+def test_pbt_u3_02_append_only_count(entries: list[CorrectionEntry]):
     """PBT-U3-02: N appends → len(get_corrections()) == N (append-only invariant)."""
-    async def _run_test():
+    import tempfile
+    from pathlib import Path
+
+    async def _run_test(tmp_path):
         kb = KnowledgeBase(kb_dir=tmp_path, refresh_interval_s=60)
         await kb.initialise()
         for e in entries:
             await kb.append_correction(e)
         return kb.get_corrections()
 
-    result = asyncio.get_event_loop().run_until_complete(_run_test())
+    with tempfile.TemporaryDirectory() as td:
+        result = asyncio.get_event_loop().run_until_complete(_run_test(Path(td)))
     assert len(result) == len(entries)
 
 
@@ -354,12 +358,14 @@ def test_pbt_u3_02_append_only_count(tmp_path, entries: list[CorrectionEntry]):
     size=st.integers(min_value=0, max_value=100_000),
 )
 @INVARIANT_SETTINGS["PBT-U3-03"]
-def test_pbt_u3_03_token_gate(tmp_path, size: int):
-    """PBT-U3-03: inject_document raises iff content > 4k tokens (16,001+ chars)."""
-    content = "a" * size
-    token_estimate = size // 4
+def test_pbt_u3_03_token_gate(size: int):
+    """PBT-U3-03: inject_document raises iff content > 4k tokens (> 16,000 chars)."""
+    import tempfile
+    from pathlib import Path
 
-    async def _run_test():
+    content = "a" * size
+
+    async def _run_test(tmp_path):
         kb = KnowledgeBase(kb_dir=tmp_path, refresh_interval_s=60)
         await kb.initialise()
         try:
@@ -370,8 +376,9 @@ def test_pbt_u3_03_token_gate(tmp_path, size: int):
                 return False
             raise
 
-    succeeded = asyncio.get_event_loop().run_until_complete(_run_test())
-    if token_estimate > 4_000:
-        assert not succeeded, f"Expected rejection for {token_estimate} tokens but succeeded"
+    with tempfile.TemporaryDirectory() as td:
+        succeeded = asyncio.get_event_loop().run_until_complete(_run_test(Path(td)))
+    if size > 4_000 * 4:  # more than 16,000 chars → more than 4k tokens
+        assert not succeeded, f"Expected rejection for size={size} but succeeded"
     else:
-        assert succeeded, f"Expected success for {token_estimate} tokens but raised"
+        assert succeeded, f"Expected success for size={size} but raised"

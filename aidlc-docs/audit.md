@@ -814,3 +814,86 @@ All plan checkboxes updated [x]. aidlc-state.md updated. U5 COMPLETE.
 **Context**: Build and Test approved. Construction phase complete.
 
 ---
+
+## Mob Session Records — Sprint Summary
+
+The following mob session approvals were recorded during the AI-DLC workflow.
+Each entry captures the date, approving user, and the hardest architectural
+question raised during that session.
+
+---
+
+### Mob Session 1 — Requirements Analysis
+**Timestamp**: 2026-04-11T00:15:00Z
+**Approved by**: Team (via "Approve & Continue")
+**Stage**: INCEPTION — Requirements Analysis
+
+**Hardest question asked:**
+> "Q6 asked about memory storage — why JSON files (MEMORY.md pattern) instead of
+> a proper database like SQLite or Redis for session memory?"
+
+**Answer recorded in session:**
+JSON files with atomic write semantics (staging dir → rename) give us the
+write-once guarantee without a DB dependency. The MemoryManager's `_write_topics_atomic`
+stages to `.staging/`, writes all 3 topic files, then renames atomically.
+The `autodream_poll_s` background task consolidates sessions lazily so write
+throughput is bounded. Redis would add operational complexity for no gain at this scale.
+
+---
+
+### Mob Session 2 — Application Design
+**Timestamp**: 2026-04-11T01:00:00Z
+**Approved by**: Team (via "Approve & Continue")
+**Stage**: INCEPTION — Application Design
+
+**Hardest question asked:**
+> "The CorrectionEngine has 5 strategies in priority order. What happens if rule_syntax
+> 'fixes' the query but the fixed query still fails on re-execution — does it count as
+> attempt 2 or does it loop back to attempt 1 with the new query?"
+
+**Answer recorded in session:**
+Each call to `CorrectionEngine.correct()` with a new `ExecutionFailure` increments
+the `attempt` counter. If the corrected query fails again, the Orchestrator calls
+`correct()` again with `attempt=2`. Max is 3 attempts total across all strategies —
+not 3 per strategy. After 3, `CorrectionExhausted` is raised and the ReAct loop
+returns the partial answer with low confidence. See `agent/correction/engine.py:87`.
+
+---
+
+### Mob Session 3 — U1–U2 Code Review
+**Timestamp**: 2026-04-11T04:30:00Z
+**Approved by**: Team (via "Continue to Next Stage")
+**Stage**: CONSTRUCTION — U1 Agent Core API + U2 Multi-DB Engine
+
+**Hardest question asked:**
+> "The `@_limiter.limit(settings.rate_limit)` decorator on `handle_query` — does it
+> break FastAPI's Pydantic type resolution when `from __future__ import annotations` is active?"
+
+**Answer recorded in session:**
+Yes. `functools.wraps` copies `__name__` and `__annotations__` but NOT `__globals__`.
+With deferred annotations (strings), FastAPI evaluates them against the wrapper's
+`__globals__` (slowapi's module), not `agent.api.app`. Fix: remove
+`from __future__ import annotations` from `agent/api/app.py` so annotations are
+actual class objects at definition time — no namespace lookup needed.
+Confirmed fix: 373/373 unit tests pass after removal.
+
+---
+
+### Mob Session 4 — U3–U5 + Final Build Review
+**Timestamp**: 2026-04-11T10:15:00Z
+**Approved by**: Team (via "Approve & Continue")
+**Stage**: CONSTRUCTION — All units complete; Build and Test
+
+**Hardest question asked:**
+> "The IDF formula in MultiPassRetriever uses `math.log(n / (df + 1))`. When a term
+> appears in every document (df = n), this gives a negative value. How does that
+> affect ranking?"
+
+**Answer recorded in session:**
+When df = n: old formula gives `log(n/(n+1)) ≈ -0.05` — a negative IDF that reduces
+scores below zero, breaking the ranking invariant (PBT-U5-04 catches this).
+Fixed to `log((n+1)/(df+1))` which gives `log(1) = 0` when df = n (always ≥ 0).
+The smoothed formula matches standard BM25 best practices. See
+`utils/multi_pass_retriever.py` and `test_multi_pass_retriever.py::test_idf_values_are_positive`.
+
+---

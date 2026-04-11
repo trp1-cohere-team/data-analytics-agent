@@ -375,9 +375,11 @@ class TestMemoryMd:
 
 @given(n=st.integers(min_value=1, max_value=10))
 @INVARIANT_SETTINGS["PBT-U3-04"]
-def test_pbt_u3_04_write_once_count(tmp_path, n: int):
+def test_pbt_u3_04_write_once_count(n: int):
     """PBT-U3-04: Saving the same session_id N times yields exactly 1 file."""
-    async def _run_test():
+    import tempfile
+
+    async def _run_test(tmp_path):
         mgr = MemoryManager(
             memory_dir=tmp_path,
             max_age_days=7,
@@ -388,13 +390,14 @@ def test_pbt_u3_04_write_once_count(tmp_path, n: int):
         sid = str(uuid.uuid4())
         for _ in range(n):
             await mgr.save_session(sid, [], "summary")
-        return sid
+        return sid, tmp_path
 
-    sid = asyncio.get_event_loop().run_until_complete(_run_test())
-    session_files = list((tmp_path / "sessions").glob("*.json"))
-    assert len(session_files) == 1
-    raw = session_files[0].read_text()
-    assert json.loads(raw)["session_id"] == sid
+    with tempfile.TemporaryDirectory() as td:
+        sid, tmp_path = asyncio.get_event_loop().run_until_complete(_run_test(Path(td)))
+        session_files = list((tmp_path / "sessions").glob("*.json"))
+        assert len(session_files) == 1
+        raw = session_files[0].read_text()
+        assert json.loads(raw)["session_id"] == sid
 
 
 # ---------------------------------------------------------------------------
@@ -403,17 +406,20 @@ def test_pbt_u3_04_write_once_count(tmp_path, n: int):
 
 @given(transcript=session_transcripts())
 @INVARIANT_SETTINGS["PBT-U3-05"]
-def test_pbt_u3_05_merge_idempotency(tmp_path, transcript: SessionTranscript):
+def test_pbt_u3_05_merge_idempotency(transcript: SessionTranscript):
     """PBT-U3-05: Merging same transcript twice produces same result as merging once."""
-    mgr = MemoryManager(
-        memory_dir=tmp_path,
-        max_age_days=7,
-        delete_after_consolidation=False,
-        autodream_poll_s=99999,
-    )
-    base = SessionMemory()
-    once = mgr._merge_session_into_topics(transcript, base)
-    twice = mgr._merge_session_into_topics(transcript, once)
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as td:
+        mgr = MemoryManager(
+            memory_dir=Path(td),
+            max_age_days=7,
+            delete_after_consolidation=False,
+            autodream_poll_s=99999,
+        )
+        base = SessionMemory()
+        once = mgr._merge_session_into_topics(transcript, base)
+        twice = mgr._merge_session_into_topics(transcript, once)
 
     # Idempotent: second merge should not add new entries for the same session_id
     assert len(twice.successful_patterns) == len(once.successful_patterns)
@@ -426,9 +432,11 @@ def test_pbt_u3_05_merge_idempotency(tmp_path, transcript: SessionTranscript):
 
 @given(memory=session_memory_objects())
 @INVARIANT_SETTINGS["PBT-U3-06"]
-def test_pbt_u3_06_session_memory_roundtrip(tmp_path, memory: SessionMemory):
+def test_pbt_u3_06_session_memory_roundtrip(memory: SessionMemory):
     """PBT-U3-06: SessionMemory serialises and deserialises without data loss."""
-    async def _run_test():
+    import tempfile
+
+    async def _run_test(tmp_path):
         mgr = MemoryManager(
             memory_dir=tmp_path,
             max_age_days=7,
@@ -439,7 +447,8 @@ def test_pbt_u3_06_session_memory_roundtrip(tmp_path, memory: SessionMemory):
         await mgr._write_topics_atomic(memory)
         return await mgr.get_topics()
 
-    loaded = asyncio.get_event_loop().run_until_complete(_run_test())
+    with tempfile.TemporaryDirectory() as td:
+        loaded = asyncio.get_event_loop().run_until_complete(_run_test(Path(td)))
     assert len(loaded.successful_patterns) == len(memory.successful_patterns)
     assert len(loaded.query_corrections) == len(memory.query_corrections)
     assert loaded.user_preferences == memory.user_preferences

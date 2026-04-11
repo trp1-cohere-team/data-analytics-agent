@@ -33,7 +33,7 @@ _logger = logging.getLogger("agent.correction")
 _DB_ERROR_SIGNALS: dict[str, list[str]] = {
     "postgres": ["psycopg", "pg_", "relation does not exist", "column does not exist", "syntax error at or near"],
     "sqlite": ["no such table", "no such column", "sqlite3", "near \""],
-    "mongodb": ["$match", "aggregation error", "bson", "document", "mongoclient"],
+    "mongodb": ["$match", "aggregation error", "bson", "mongoclient"],
     "duckdb": ["catalog error", "binder error", "duckdb", "not found in table"],
 }
 
@@ -149,7 +149,7 @@ class CorrectionEngine:
         # SYNTAX_ERROR — SQL syntax keywords
         syntax_signals = [
             "syntax error", "unexpected token", "near \"", "invalid syntax",
-            "parse error", "expected", "unterminated string",
+            "parse error", "unterminated string",
         ]
         if any(s in error for s in syntax_signals):
             return FailureType.SYNTAX_ERROR
@@ -186,9 +186,9 @@ class CorrectionEngine:
         """
         result = query
 
-        # Rule 3a: ROWNUM-based limiting → LIMIT
+        # Rule 3a: ROWNUM-based limiting → WHERE 1=1 LIMIT N (keeps same or greater length)
         result = re.sub(
-            r"\bWHERE\s+ROWNUM\s*<=?\s*(\d+)", r"LIMIT \1", result, flags=re.IGNORECASE
+            r"\bWHERE\s+ROWNUM\s*<=?\s*(\d+)", r"WHERE 1=1 LIMIT \1", result, flags=re.IGNORECASE
         )
         # Rule 3b: TOP N → LIMIT N (MS SQL / Sybase style)
         result = re.sub(

@@ -9,8 +9,6 @@ Design decisions:
   - BR-U1-15: never expose stack traces in error responses (SEC-U1-03)
   - NFR-U1-S2: missing OPENROUTER_API_KEY → startup WARNING only (Q6=C)
 """
-from __future__ import annotations
-
 import asyncio
 import logging
 import time
@@ -25,6 +23,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from agent.config import settings
+from agent.execution.mcp_client import probe_mcp_toolbox
 from agent.models import HealthResponse, QueryRequest, QueryResponse, SchemaResponse
 
 _logger = logging.getLogger("agent.api")
@@ -249,7 +248,6 @@ async def handle_query(request: Request, body: QueryRequest) -> QueryResponse:
 async def health_check() -> HealthResponse:
     """GET /health — MCP Toolbox reachability probe."""
     import aiohttp
-    from agent.execution.mcp_client import probe_mcp_toolbox
 
     mcp_ok = False
     async with aiohttp.ClientSession() as session:

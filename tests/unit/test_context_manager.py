@@ -22,25 +22,29 @@ from agent.models import (
 # ---------------------------------------------------------------------------
 
 def _make_manager(
-    kb=None, memory=None, schema_introspector=None, tmp_path=None
+    kb=None, memory=None, schema_introspector=None, tmp_path=None,
+    refresh_interval_s=999,
 ) -> ContextManager:
-    kb = kb or MagicMock()
-    kb.load_documents = AsyncMock(return_value=[])
-    kb.get_corrections = MagicMock(return_value=[])
+    if kb is None:
+        kb = MagicMock()
+        kb.load_documents = AsyncMock(return_value=[])
+        kb.get_corrections = MagicMock(return_value=[])
 
-    memory = memory or MagicMock()
-    memory.get_topics = AsyncMock(return_value=SessionMemory())
+    if memory is None:
+        memory = MagicMock()
+        memory.get_topics = AsyncMock(return_value=SessionMemory())
 
-    introspector = schema_introspector or MagicMock()
-    introspector.introspect_all = AsyncMock(return_value=SchemaContext(databases={}))
+    if schema_introspector is None:
+        schema_introspector = MagicMock()
+        schema_introspector.introspect_all = AsyncMock(return_value=SchemaContext(databases={}))
 
     import tempfile
     from pathlib import Path
     kb_dir = tmp_path or Path(tempfile.mkdtemp())
 
     mgr = ContextManager(
-        kb=kb, memory=memory, schema_introspector=introspector,
-        kb_dir=kb_dir, refresh_interval_s=999,
+        kb=kb, memory=memory, schema_introspector=schema_introspector,
+        kb_dir=kb_dir, refresh_interval_s=refresh_interval_s,
     )
     return mgr
 

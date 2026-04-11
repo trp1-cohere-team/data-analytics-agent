@@ -214,7 +214,7 @@ class KnowledgeBase:
         _validate_filename(filename)   # SEC-U3-02
 
         token_estimate = len(content) // 4
-        if token_estimate > _MAX_TOKENS:
+        if len(content) > _MAX_TOKENS * 4:
             raise ValueError(
                 f"Document exceeds {_MAX_TOKENS:,} token budget: "
                 f"~{token_estimate:,} tokens. Split the document."

@@ -25,7 +25,7 @@ _SCHEMA_ERROR_KEYWORDS = (
     "no such table",
     "column not found",
     "undefined column",
-    "relation does not exist",
+    "does not exist",
     "unknown collection",
 )
 

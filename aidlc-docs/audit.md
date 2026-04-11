@@ -703,3 +703,114 @@ All plan checkboxes updated [x]. aidlc-state.md updated. U5 COMPLETE.
 **Context**: All 12 design decisions implemented. SEC-U1-01/02/03 enforced. 2 PBT invariants present.
 
 ---
+
+## U4 Functional Design — Complete
+**Timestamp**: 2026-04-11T08:45:00Z
+**User Input**: "[session continuation — U1 commits completed, advancing to U4]"
+**AI Response**: Created U4 Functional Design artifacts. Pre-filled all 10 Q&A decisions from existing application-design.md and models.py. Produced: domain-entities.md (7 entities: DABQuery, BenchmarkResult, JudgeVerdict, RegressionResult, TrialRecord, ScoreLogEntry, TraceFile), business-logic-model.md (EvaluationHarness.run, BenchmarkRunner, ExactMatchScorer, LLMJudgeScorer, QueryTraceRecorder, ScoreLog, RegressionSuite, CLI logic), business-rules.md (23 rules covering scoring, pass@1, regression, I/O integrity, concurrency, CLI, LLM judge, validation). Key decisions: Q1=B (1% relative numeric tolerance), Q3=B (LLMJudge waterfall after ExactMatch), Q4=B (Semaphore(5)), Q5=A (pass@1=first trial), Q6=A (zero-tolerance regression gate).
+**Context**: U4 Functional Design COMPLETED. Advancing to NFR Requirements.
+
+---
+
+## U4 Functional Design — Approved
+**Timestamp**: 2026-04-11T08:50:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: Proceeding to U4 NFR Requirements.
+**Context**: U4 Functional Design approved. Starting NFR Requirements stage.
+
+---
+
+## U4 NFR Requirements — Complete
+**Timestamp**: 2026-04-11T09:00:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: Created U4 NFR Requirements artifacts. Performance: 10min budget for 50-query run, <1ms ExactMatch, <30s LLM judge. Reliability: fail-safe per trial, 60s timeout, judge parse error safe. Security: SEC-U4-01 (no content in logs), SEC-U4-02 (append-only score log), SEC-U4-03 (API key not in traces), SEC-U4-04 (trace write-once), SEC-U4-05 (no shell injection). PBT: PBT-U4-01 (ExactMatch self-consistency, 500 examples), PBT-U4-02 (ScoreLog round-trip, 200 examples). Tech: aiohttp (agent calls), openai.AsyncOpenAI (judge), argparse (CLI). 4 NFR patterns: AppendOnlyScoreWriter, SemaphoreThrottledCaller, FailSafeTrialRunner, WaterfallScorer.
+**Context**: U4 NFR Requirements COMPLETED. Advancing to NFR Design.
+
+---
+
+## U4 NFR Requirements — Approved
+**Timestamp**: 2026-04-11T09:05:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: Proceeding to U4 NFR Design.
+**Context**: U4 NFR Requirements approved. Starting NFR Design stage.
+
+---
+
+## U4 NFR Design — Complete
+**Timestamp**: 2026-04-11T09:15:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: Created U4 NFR Design artifacts. 4 patterns: AppendOnlyScoreWriter (SEC-U4-02, score_log "a" mode only), SemaphoreThrottledCaller (Semaphore(5) per run_query call), FailSafeTrialRunner (try/except aiohttp.ClientError/asyncio.TimeoutError → passed=False, run continues), WaterfallScorer (ExactMatch → LLMJudge only on failure). Logical components: EvaluationHarness (public), BenchmarkRunner (Semaphore+FailSafe+Waterfall), ExactMatchScorer (pure), LLMJudgeScorer (async LLM), QueryTraceRecorder (write-once), ScoreLog (append-only), RegressionSuite, CLI. Infrastructure: asyncio.Semaphore(5), aiohttp.ClientSession, openai.AsyncOpenAI (per run). PBT strategies: numeric_values() for PBT-U4-01, benchmark_results() for PBT-U4-02. Full data flow diagram produced.
+**Context**: U4 NFR Design COMPLETED. Advancing to Infrastructure Design.
+
+---
+
+## U4 NFR Design — Approved
+**Timestamp**: 2026-04-11T09:20:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: Proceeding to U4 Infrastructure Design.
+**Context**: U4 NFR Design approved. Starting Infrastructure Design stage.
+
+---
+
+## U4 Infrastructure Design — Complete
+**Timestamp**: 2026-04-11T09:25:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: Created U4 Infrastructure Design artifacts. All 7 categories assessed as N/A — U4 is a batch CLI tool with no standalone infrastructure. Runtime dependencies (agent HTTP, OpenRouter API, results/ filesystem) are not owned by U4. Deployment model: one-off python process alongside agent server and MCP Toolbox. CI integration: sys.exit(1) on regression for non-zero exit code.
+**Context**: U4 Infrastructure Design COMPLETED. Advancing to Code Generation.
+
+---
+
+## U4 Infrastructure Design — Approved
+**Timestamp**: 2026-04-11T09:30:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: Proceeding to U4 Code Generation Planning.
+**Context**: U4 Infrastructure Design approved. Starting Code Generation stage.
+
+---
+
+## U4 Code Generation — Plan Approved
+**Timestamp**: 2026-04-11T09:35:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: Executing all 7 steps of u4-code-generation-plan.md.
+**Context**: Proceeding to Code Generation Part 2.
+
+---
+
+## U4 Code Generation — Complete
+**Timestamp**: 2026-04-11T09:55:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: Executed all 7 steps of u4-code-generation-plan.md. Created: eval/__init__.py, eval/harness.py (TrialRecord, ExactMatchScorer, LLMJudgeScorer, QueryTraceRecorder, ScoreLog, RegressionSuite, BenchmarkRunner, EvaluationHarness — 4 NFR patterns), eval/run_benchmark.py (argparse CLI, sys.exit(1) on regression). Updated tests/unit/strategies.py (+PBT-U4-01/02 settings, numeric_values(), benchmark_results()). Created tests/unit/test_scorers.py (PBT-U4-01 500 examples) and tests/unit/test_harness.py (PBT-U4-02 200 examples). Created code-summary.md. All 5 security rules compliant. Updated aidlc-state.md: U4 Code Generation COMPLETED, Current Stage = Build and Test.
+**Context**: All 5 units complete. Advancing to Build and Test phase.
+
+---
+
+## U4 Code Generation — Approved
+**Timestamp**: 2026-04-11T10:00:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: Proceeding to Build and Test stage.
+**Context**: U4 Code Generation approved. All 5 units complete. Starting Build and Test.
+
+---
+
+## Build and Test Stage — Complete
+**Timestamp**: 2026-04-11T10:15:00Z
+**Build Status**: Instructions generated — execution pending
+**Test Status**: Instructions generated — execution pending
+**Files Generated**:
+- build-instructions.md
+- unit-test-instructions.md
+- integration-test-instructions.md
+- performance-test-instructions.md
+- security-test-instructions.md
+- build-and-test-summary.md
+**Context**: All 5 units complete. Build and Test instructions generated. Advancing to Operations (placeholder).
+
+---
+
+## Build and Test Stage — Approved
+**Timestamp**: 2026-04-11T10:20:00Z
+**User Input**: "Approve & Continue"
+**AI Response**: Proceeding to Operations stage (placeholder).
+**Context**: Build and Test approved. Construction phase complete.
+
+---

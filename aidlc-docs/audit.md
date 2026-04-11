@@ -458,3 +458,160 @@ All plan checkboxes updated [x]. aidlc-state.md updated. U5 COMPLETE.
 **Context**: CONSTRUCTION — U2 Code Generation COMPLETED. Awaiting user approval to proceed to U3.
 
 ---
+
+## U3 Functional Design — Start
+**Timestamp**: 2026-04-11T04:10:00Z
+**AI Response**: U2 Code Generation approved. Starting U3 — Knowledge Base & Memory (Build Order: 3rd). Loading functional-design.md rules. Analyzing unit-of-work.md and story map for U3 scope. Creating functional design plan with questions.
+**Context**: CONSTRUCTION — U3 Functional Design Part 1 (Planning) in progress.
+
+---
+
+## U3 Functional Design — Questions Created
+**Timestamp**: 2026-04-11T04:15:00Z
+**AI Response**: Created u3-functional-design-plan.md with 9 questions across 5 categories: document loading (Q1-Q2), corrections log format (Q3-Q4), session storage (Q5-Q6), topic consolidation/autoDream (Q7-Q8), KB initialization (Q9). Awaiting user answers.
+**Context**: CONSTRUCTION — U3 Functional Design Part 1 (Planning) in progress.
+
+---
+
+## U3 Functional Design — User Answers Received
+**Timestamp**: 2026-04-11T04:20:00Z
+**User Input**: "am done"
+**Answers**:
+- Q1 Document loading: D — Hybrid — eager load with per-subdir refresh interval
+- Q2 Token budget: B — 4,000 tokens per KB document
+- Q3 Corrections format: C — JSON array with atomic swap (.tmp rename)
+- Q4 In-memory update: A — Yes — dual write (disk + in-memory list)
+- Q5 Session trigger: A — Explicit call by U1 Orchestrator at query end
+- Q6 Session content: C — Both raw list[TraceStep] + brief text summary
+- Q7 autoDream trigger: B — At __init__ / agent startup as background task
+- Q8 Consolidation output: C — Both topic JSON files + append to MEMORY.md
+- Q9 KB init: D — Create 4 subdirs + seed minimal CHANGELOG.md placeholder
+**AI Response**: No ambiguities. Generating functional design artifacts.
+**Context**: CONSTRUCTION — U3 Functional Design Part 2 (Generation) in progress.
+
+---
+
+## U3 Functional Design — Complete
+**Timestamp**: 2026-04-11T04:30:00Z
+**AI Response**: Generated domain-entities.md (5 entities: KBDocument, CorrectionEntry, SessionTranscript, SessionMemory, TopicStore), business-logic-model.md (14 algorithms: KnowledgeBase._ensure_kb_structure, load_documents hybrid cache, inject_document with token budget, append_correction atomic swap, MemoryManager save_session, get_topics, _run_autoDream, _merge_session_into_topics, _write_topics_atomic), business-rules.md (20 rules: KB-01 through KB-10, MM-01 through MM-09, DC-01 through DC-03). aidlc-state.md updated. Presenting completion message.
+**Context**: CONSTRUCTION — U3 Functional Design COMPLETED. Awaiting user approval.
+
+---
+
+## U3 Functional Design — User Approval
+**Timestamp**: 2026-04-11T04:35:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: U3 Functional Design approved. Proceeding to U3 NFR Requirements.
+**Context**: CONSTRUCTION — U3 NFR Requirements starting.
+
+---
+
+## U3 NFR Requirements — Questions Created
+**Timestamp**: 2026-04-11T04:40:00Z
+**AI Response**: Created u3-nfr-requirements-plan.md with 7 questions across 4 categories: concurrency/file safety (Q1-Q2), autoDream reliability (Q3-Q4), PBT properties (Q5-Q6), observability (Q7). Awaiting user answers.
+**Context**: CONSTRUCTION — U3 NFR Requirements Part 1 (Planning) in progress.
+
+---
+
+## U3 NFR Requirements — User Answers Received
+**Timestamp**: 2026-04-11T04:45:00Z
+**User Input**: "am done"
+**Answers**:
+- Q1 Concurrency/corrections: D — Single in-process asyncio.Lock (single-process deployment)
+- Q2 Concurrency/sessions: B — asyncio.Lock keyed by session_id
+- Q3 autoDream partial failure: B — Full rollback via staging directory
+- Q4 Session deletion: D — Configurable (memory_delete_after_consolidation: bool, default True)
+- Q5 KnowledgeBase PBT: D — All three (round-trip, append-only count, injection token gate)
+- Q6 MemoryManager PBT: D — All three (write-once count, topic merge idempotency, SessionMemory round-trip)
+- Q7 Logging: D — Structured named log events with consistent extra fields
+**AI Response**: No ambiguities. Generating nfr-requirements.md and tech-stack-decisions.md.
+**Context**: CONSTRUCTION — U3 NFR Requirements Part 2 (Generation) in progress.
+
+---
+
+## U3 NFR Requirements — Complete
+**Timestamp**: 2026-04-11T04:55:00Z
+**AI Response**: Generated nfr-requirements.md (CONC-U3-01/02: asyncio.Lock for corrections and per-session_id; REL-U3-01: autoDream full rollback staging; REL-U3-02: configurable session deletion; REL-U3-03: idempotency; REL-U3-04: corrupt entry tolerance; 6 blocking PBT properties PBT-U3-01 through PBT-U3-06; 5 OBS events; 2 SEC rules). Generated tech-stack-decisions.md (stdlib only, no new packages; asyncio.Lock patterns; staging dir pattern; 1 new config field; SessionTranscript model addition; 2 new Hypothesis strategies). aidlc-state.md updated. Presenting completion message.
+**Context**: CONSTRUCTION — U3 NFR Requirements COMPLETED. Awaiting user approval.
+
+---
+
+## U3 NFR Requirements — User Approval
+**Timestamp**: 2026-04-11T05:00:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: U3 NFR Requirements approved. Proceeding to U3 NFR Design.
+**Context**: CONSTRUCTION — U3 NFR Design starting.
+
+---
+
+## U3 NFR Design — Questions Created
+**Timestamp**: 2026-04-11T05:05:00Z
+**AI Response**: Created u3-nfr-design-plan.md with 3 questions: async I/O wrapping strategy (Q1), stale staging directory handling (Q2), asyncio.Lock scope (Q3). Awaiting user answers.
+**Context**: CONSTRUCTION — U3 NFR Design Part 1 (Planning) in progress.
+
+---
+
+## U3 NFR Design — User Answers Received
+**Timestamp**: 2026-04-11T05:10:00Z
+**User Input**: "am done"
+**Answers**:
+- Q1 Async I/O: A — asyncio.to_thread() wraps all disk I/O
+- Q2 Stale staging: A — Wipe .staging/ before starting fresh
+- Q3 Lock scope: B — Instance-level lock (better test isolation)
+**AI Response**: No ambiguities. Generating nfr-design-patterns.md and logical-components.md.
+**Context**: CONSTRUCTION — U3 NFR Design Part 2 (Generation) in progress.
+
+---
+
+## U3 NFR Design — Complete
+**Timestamp**: 2026-04-11T05:20:00Z
+**AI Response**: Generated nfr-design-patterns.md (4 patterns: AsyncFileIOWrapper using asyncio.to_thread for all disk I/O; StagingTransactionWriter with stale staging wipe; InstanceScopedLockRegistry with instance-level corrections lock + per-session dict; StructuredMemoryLogger with named events and no content). Generated logical-components.md (8 internal components: SubdirCache, CorrectionsStore, FilenameGuard, AsyncFileIO helpers, SessionRegistry, TopicStoreReader, StagingTransactionWriter, autoDreamTask; full dependency graph; SessionTranscript model addition). aidlc-state.md updated. Presenting completion message.
+**Context**: CONSTRUCTION — U3 NFR Design COMPLETED. Awaiting user approval.
+
+---
+
+## U3 NFR Design — User Approval
+**Timestamp**: 2026-04-11T05:25:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: U3 NFR Design approved. Proceeding to U3 Infrastructure Design.
+**Context**: CONSTRUCTION — U3 Infrastructure Design starting.
+
+---
+
+## U3 Infrastructure Design — Complete
+**Timestamp**: 2026-04-11T05:35:00Z
+**AI Response**: All 7 infrastructure categories assessed. Storage = local file system only (kb/ and agent/memory/). All other categories N/A (in-process library, no network, no external services). Generated infrastructure-design.md (7-category table, storage layout, env vars, files produced) and deployment-architecture.md (runtime position diagram, lifecycle table, thread pool usage). aidlc-state.md updated. Presenting completion message.
+**Context**: CONSTRUCTION — U3 Infrastructure Design COMPLETED. Awaiting user approval.
+
+---
+
+## U3 Infrastructure Design — User Approval
+**Timestamp**: 2026-04-11T05:40:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: U3 Infrastructure Design approved. Proceeding to U3 Code Generation Part 1 (Planning).
+**Context**: CONSTRUCTION — U3 Code Generation starting.
+
+---
+
+## U3 Code Generation — Part 1 Planning Complete
+**Timestamp**: 2026-04-11T05:45:00Z
+**AI Response**: Created u3-code-generation-plan.md with 10 steps covering: models.py (SessionTranscript), config.py (memory_delete_after_consolidation), kb/__init__.py, knowledge_base.py (AsyncFileIOWrapper + all components), memory/__init__.py, memory/manager.py (MemoryManager + autoDream + StagingTransactionWriter), strategies.py (2 new strategies), test_knowledge_base.py (PBT-U3-01/02/03), test_memory_manager.py (PBT-U3-04/05/06), code-summary.md. Presenting plan for approval.
+**Context**: CONSTRUCTION — U3 Code Generation Part 1 (Planning) complete. Awaiting approval.
+
+---
+
+## U3 Code Generation — Plan Approved
+**Timestamp**: 2026-04-11T05:50:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: Plan approved. Executing Part 2 — Code Generation (Steps 1–10).
+**Context**: CONSTRUCTION — U3 Code Generation Part 2 in progress.
+
+---
+
+## U3 Code Generation — Part 2 Execution
+**Timestamp**: 2026-04-11T06:30:00Z
+**User Input**: "[Continued from previous context — executing U3 Code Generation Part 2]"
+**AI Response**: Executed Steps 4-10 of u3-code-generation-plan.md. Created: agent/kb/knowledge_base.py, agent/memory/manager.py, updated tests/unit/strategies.py, created tests/unit/test_knowledge_base.py, tests/unit/test_memory_manager.py, aidlc-docs/construction/u3-knowledge-base-memory/code/code-summary.md. Updated aidlc-state.md U3 Code Generation to COMPLETED.
+**Context**: U3 Code Generation complete — all 10 steps marked [x]. 6 PBT invariants implemented (PBT-U3-01 through PBT-U3-06). SEC-U3-01 and SEC-U3-02 enforced.
+
+---

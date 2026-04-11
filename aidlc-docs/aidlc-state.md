@@ -4,7 +4,7 @@
 - **Project Name**: The Oracle Forge — Data Analytics Agent
 - **Project Type**: Greenfield
 - **Start Date**: 2026-04-11T00:00:00Z
-- **Current Stage**: CONSTRUCTION - U1 Agent Core & API (next)
+- **Current Stage**: CONSTRUCTION - U4 Evaluation Harness (next)
 
 ## Workspace State
 - **Existing Code**: No
@@ -56,11 +56,11 @@
 - [x] Code Generation — COMPLETED 2026-04-11T06:30:00Z
 
 #### U1 — Agent Core & API (Build Order: 4th)
-- [ ] Functional Design — PENDING
-- [ ] NFR Requirements — PENDING
-- [ ] NFR Design — PENDING
-- [ ] Infrastructure Design — PENDING
-- [ ] Code Generation — PENDING
+- [x] Functional Design — COMPLETED 2026-04-11T06:50:00Z
+- [x] NFR Requirements — COMPLETED 2026-04-11T07:05:00Z
+- [x] NFR Design — COMPLETED 2026-04-11T07:15:00Z
+- [x] Infrastructure Design — COMPLETED 2026-04-11T07:22:00Z
+- [x] Code Generation — COMPLETED 2026-04-11T08:15:00Z
 
 #### U4 — Evaluation Harness (Build Order: 5th)
 - [ ] Functional Design — PENDING

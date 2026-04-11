@@ -615,3 +615,91 @@ All plan checkboxes updated [x]. aidlc-state.md updated. U5 COMPLETE.
 **Context**: U3 Code Generation complete — all 10 steps marked [x]. 6 PBT invariants implemented (PBT-U3-01 through PBT-U3-06). SEC-U3-01 and SEC-U3-02 enforced.
 
 ---
+
+## U1 Functional Design — Plan Presented
+**Timestamp**: 2026-04-11T06:35:00Z
+**User Input**: "commit and continue with the next stage"
+**AI Response**: Committed U3 (2 story-telling commits). Started U1 Functional Design. Presented 12-question plan covering Orchestrator ReAct loop, ContextManager layer assembly, CorrectionEngine fix strategies, and AgentAPI session/security design.
+**Context**: U1 Functional Design Phase — waiting for user answers to Q1-Q12.
+
+---
+
+## U1 Functional Design — Complete
+**Timestamp**: 2026-04-11T06:50:00Z
+**User Input**: "continue with the ai-dlc stage"
+**AI Response**: Generated all three U1 functional design artifacts: domain-entities.md (ReactState, Thought, Observation, OrchestratorResult, ContextBundle, CorrectionsContext, CorrectionResult, FailureType), business-logic-model.md (AgentAPI pipeline, ContextManager 3-layer assembly, ReAct loop with think/act/observe, CorrectionEngine tiered strategies), business-rules.md (17 rules covering iteration limits, session policy, LLM format contract, fix patterns, rate limiting, security headers). Updated aidlc-state.md U1 Functional Design to COMPLETED.
+**Context**: Design decisions applied: Q1=B (system prompt JSON format), Q2=C (could-not-answer on iteration exhaustion), Q3=A (LLM-reported confidence), Q4=B (LLM generates full QueryPlan), Q5=B (correction loops back to think), Q6=A (mtime-based Layer 2 refresh), Q7=B (markdown bullets for Layer 3), Q8=A (AgentAPI calls save_session), Q9=C (syntax fix patterns), Q10=B (db-type error signal patterns), Q11=B (caller session_id accepted as-is), Q12=B (3 security headers).
+
+---
+
+## U1 Functional Design — User Approval
+**Timestamp**: 2026-04-11T06:55:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: Proceeding to U1 NFR Requirements.
+**Context**: U1 Functional Design approved. Starting NFR Requirements stage.
+
+---
+
+## U1 NFR Requirements — Complete
+**Timestamp**: 2026-04-11T07:05:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: Generated U1 NFR requirements artifacts. nfr-requirements.md: performance (p95 <30s, 5-20 concurrent), reliability (HTTP 503 on LLM unavailable, HTTP 200 with structured error on DB failure), security (no auth, startup warning on missing key, no content in logs, 3 security headers), observability (structured per-request log with session_id/iterations/confidence/elapsed_ms/correction_count/action_sequence), maintainability (unit tests with DI-injected mock LLM, PBT for classify_failure and fix_syntax_error). tech-stack-decisions.md: FastAPI+Uvicorn, slowapi, openai AsyncOpenAI with DI injection pattern, custom ASGI middleware stack. Updated aidlc-state.md U1 NFR Requirements to COMPLETED.
+**Context**: PBT-U1-01 (classify_failure 300 examples) and PBT-U1-02 (fix_syntax_error 200 examples) added. SEC-U1-01/02/03 enforced.
+
+---
+
+## U1 NFR Requirements — User Approval
+**Timestamp**: 2026-04-11T07:08:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: Proceeding to U1 NFR Design.
+**Context**: U1 NFR Requirements approved. Starting NFR Design stage.
+
+---
+
+## U1 NFR Design — Complete
+**Timestamp**: 2026-04-11T07:15:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: Generated U1 NFR design artifacts. nfr-design-patterns.md: 7 patterns (ExponentialBackoffRetry for RateLimitError, PromptCacheBuilder for static/dynamic prompt split, ASGISecurityMiddleware, DualLayerErrorHandler, StructuredRequestLogger, DependencyInjectedLLMClient, LifespanManagedTasks). logical-components.md: full component map for app.py/react_loop.py/manager.py/engine.py, inter-component dependency graph, happy-path sequence diagram. Updated aidlc-state.md U1 NFR Design to COMPLETED.
+**Context**: Q1=B (exponential backoff, no jitter), Q2=B (no circuit breaker), Q3=B (static prompt cache), Q4=B (sequential context loading), Q5=B (BaseHTTPMiddleware), Q6=C (dual-layer error handler), Q7=B (lifespan DI), Q8=B (asyncio.create_task).
+
+---
+
+## U1 NFR Design — User Approval
+**Timestamp**: 2026-04-11T07:18:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: Proceeding to U1 Infrastructure Design.
+**Context**: U1 NFR Design approved. Starting Infrastructure Design stage.
+
+---
+
+## U1 Infrastructure Design — Complete
+**Timestamp**: 2026-04-11T07:22:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: Generated U1 infrastructure design artifacts. All 7 categories assessed as N/A for new services. infrastructure-design.md: process ports (8000/5000/443), environment variables, 10-step startup sequence. deployment-architecture.md: ASCII runtime diagram showing uvicorn process, MCP Toolbox, file system, and OpenRouter; data flow table. Updated aidlc-state.md U1 Infrastructure Design to COMPLETED.
+**Context**: No new infrastructure — U1 is a pure application layer consuming U2 (MultiDBEngine), U3 (KnowledgeBase, MemoryManager), U5 (SchemaIntrospector, MultiPassRetriever).
+
+---
+
+## U1 Infrastructure Design — User Approval
+**Timestamp**: 2026-04-11T07:25:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: Proceeding to U1 Code Generation Part 1 (Planning).
+**Context**: U1 Infrastructure Design approved. Starting Code Generation stage.
+
+---
+
+## U1 Code Generation — Plan Presented
+**Timestamp**: 2026-04-11T07:28:00Z
+**User Input**: "[plan approval prompt]"
+**AI Response**: Created 15-step U1 code generation plan. Steps: 4 package markers, middleware.py (SecurityHeaders + GlobalErrorHandler), app.py (FastAPI lifespan/routes/rate-limit), react_loop.py (Orchestrator with 7 patterns), manager.py (ContextManager 3-layer), engine.py (CorrectionEngine 5 strategies + CorrectionExhausted), strategies.py update (PBT-U1-01/02 settings + execution_failures strategy), 4 test files, code-summary.md.
+**Context**: Awaiting user approval to proceed to Code Generation Part 2.
+
+---
+
+## U1 Code Generation — Complete
+**Timestamp**: 2026-04-11T08:15:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: Executed all 15 steps of u1-code-generation-plan.md. Created: agent/api/__init__.py, middleware.py (SecurityHeaders+GlobalError), app.py (FastAPI factory+lifespan+3 routes+rate-limiter), agent/orchestrator/__init__.py, react_loop.py (Orchestrator+7 patterns), agent/context/__init__.py, manager.py (ContextManager+3-layer+background-refresh), agent/correction/__init__.py, engine.py (CorrectionEngine+5 strategies+CorrectionExhausted), updated tests/unit/strategies.py (PBT-U1-01/02+execution_failures strategy), created test_correction_engine.py (PBT-U1-01 300 examples), test_orchestrator.py (PBT-U1-02 200 examples), test_context_manager.py, test_api.py, code-summary.md. Updated aidlc-state.md U1 Code Generation to COMPLETED.
+**Context**: All 12 design decisions implemented. SEC-U1-01/02/03 enforced. 2 PBT invariants present.
+
+---

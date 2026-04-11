@@ -24,3 +24,27 @@ __pycache__/
 openai-context-layering/
 test.md
 Challenge Documents/
+
+# Temp / cache directories
+.hypothesis/
+.pytest_cache/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pycache
+
+# Test / coverage artifacts
+htmlcov/
+.coverage
+coverage.xml
+*.egg-info/
+dist/
+build/
+
+# OS / editor temp files
+*.tmp
+*.swp
+*.bak
+.DS_Store
+Thumbs.db

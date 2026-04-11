@@ -25,6 +25,9 @@ INVARIANT_SETTINGS: dict[str, Any] = {
     "PBT-U5-03": settings(max_examples=100, deadline=timedelta(milliseconds=200)),
     "PBT-U5-04": settings(max_examples=100, deadline=timedelta(milliseconds=500)),
     "PBT-U5-05": settings(max_examples=150, deadline=timedelta(milliseconds=200)),
+    # U1 invariants
+    "PBT-U1-01": settings(max_examples=300, deadline=timedelta(milliseconds=200)),
+    "PBT-U1-02": settings(max_examples=200, deadline=timedelta(milliseconds=200)),
     # U3 invariants
     "PBT-U3-01": settings(max_examples=200, deadline=timedelta(milliseconds=500)),
     "PBT-U3-02": settings(max_examples=100, deadline=timedelta(milliseconds=2000)),
@@ -123,6 +126,25 @@ def correction_entries(draw: st.DrawFn) -> Any:
         fix_strategy=draw(st.sampled_from(fix_strategies)),
         attempt_number=draw(st.integers(min_value=1, max_value=3)),
         success=draw(st.booleans()),
+    )
+
+
+# ---------------------------------------------------------------------------
+# U1 strategies — ExecutionFailure (PBT-U1-01)
+# ---------------------------------------------------------------------------
+
+@st.composite
+def execution_failures(draw: st.DrawFn) -> Any:
+    """Generate a valid ExecutionFailure for CorrectionEngine PBT tests."""
+    from agent.models import ExecutionFailure
+    db_types = ["postgres", "sqlite", "mongodb", "duckdb"]
+    error_types = ["timeout", "connection_error", "rate_limit", "auth_error",
+                   "schema_error", "data_type_error", "query_error", "unknown"]
+    return ExecutionFailure(
+        sub_query_id=str(draw(st.uuids())),
+        db_type=draw(st.sampled_from(db_types)),
+        error_message=draw(st.text(min_size=1, max_size=300, alphabet=st.characters(whitelist_categories=("L", "N", "Zs", "P")))),
+        error_type=draw(st.sampled_from(error_types)),
     )
 
 

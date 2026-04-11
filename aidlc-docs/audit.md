@@ -395,3 +395,66 @@ All plan checkboxes updated [x]. aidlc-state.md updated. U5 COMPLETE.
 **Context**: Awaiting explicit user approval.
 
 ---
+
+## U2 NFR Requirements — User Approval
+**Timestamp**: 2026-04-11T03:00:00Z
+**User Input**: "now lets continue with the implementation and dont forget to use AI-DLC"
+**AI Response**: Resuming AI-DLC workflow. U2 NFR Requirements already approved. Proceeding to U2 NFR Design.
+**Context**: CONSTRUCTION — U2 NFR Design starting.
+
+---
+
+## U2 NFR Design — Plan Created
+**Timestamp**: 2026-04-11T03:01:00Z
+**AI Response**: Created u2-nfr-design-plan.md with 2 questions: session lifecycle on MCP failure, row cap application point. Awaiting user answers.
+**Context**: CONSTRUCTION — U2 NFR Design Part 1 (Planning) in progress.
+
+---
+
+## U2 NFR Design — User Answers Received
+**Timestamp**: 2026-04-11T03:10:00Z
+**User Input**: "am done"
+**Answers**:
+- Q1 Session lifecycle: B — Eager health check; __aenter__ probes GET /healthz; raises RuntimeError immediately if unreachable
+- Q2 Row cap: C — Both stages: per-sub-query cap (memory safety during gather) + post-merge cap (bounds Orchestrator input)
+**AI Response**: No ambiguities. Generated nfr-design-patterns.md (4 patterns: EagerConnectionGuard, DoubleRowCapGuard, PriorityErrorClassifier, StructuredObservabilityEmitter) and logical-components.md (8 components with interfaces, models.py additions, dependency graph). All plan checkboxes updated. aidlc-state.md updated.
+**Context**: CONSTRUCTION — U2 NFR Design COMPLETED. Presenting completion message.
+
+---
+
+## U2 NFR Design — Completion Message
+**Timestamp**: 2026-04-11T03:15:00Z
+**AI Response**: Presenting U2 NFR Design completion message to user.
+**Context**: Awaiting explicit user approval.
+
+---
+
+## U2 Infrastructure Design — User Approval
+**Timestamp**: 2026-04-11T03:20:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: U2 Infrastructure Design approved. Proceeding to U2 Code Generation (Part 1 — Planning).
+**Context**: CONSTRUCTION — U2 Infrastructure Design COMPLETED. Transitioning to Code Generation.
+
+---
+
+## U2 Code Generation — Part 1 Planning Start
+**Timestamp**: 2026-04-11T03:25:00Z
+**AI Response**: Loading code-generation.md rules. Analyzing U2 design artifacts. Creating u2-code-generation-plan.md with 8 steps covering models update, config update, mcp_client.py, engine.py, and all tests.
+**Context**: CONSTRUCTION — U2 Code Generation Part 1 (Planning) in progress.
+
+---
+
+## U2 Code Generation — Plan Approved
+**Timestamp**: 2026-04-11T03:30:00Z
+**User Input**: "Continue to Next Stage"
+**AI Response**: Plan approved. Executing Part 2 — Code Generation (Steps 1–8).
+**Context**: CONSTRUCTION — U2 Code Generation Part 2 in progress.
+
+---
+
+## U2 Code Generation — Complete
+**Timestamp**: 2026-04-11T04:00:00Z
+**AI Response**: All 8 steps complete. Generated: agent/models.py (updated), agent/config.py (updated), agent/execution/__init__.py, agent/execution/mcp_client.py, agent/execution/engine.py, tests/unit/test_mcp_client.py (20 tests + PBT-U2-MC-01), tests/unit/test_execution_engine.py (18 tests + PBT-U2-EE-01), aidlc-docs/construction/u2-multi-db-engine/code/code-summary.md. aidlc-state.md updated: U2 all 5 stages complete. Presenting completion message.
+**Context**: CONSTRUCTION — U2 Code Generation COMPLETED. Awaiting user approval to proceed to U3.
+
+---

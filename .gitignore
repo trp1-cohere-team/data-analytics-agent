@@ -104,3 +104,8 @@ docker-compose.mcp.yml
 .idea/
 .DS_Store
 tenai/
+# Local database artifacts
+data/**/*.db
+data/**/*.sqlite
+data/**/*.duckdb
+data/duckdb/_postgres_sqlite_cache/

@@ -1,0 +1,35 @@
+{
+  "pass_at_1": 1.0,
+  "total_queries": 5,
+  "passed_queries": 5,
+  "dataset_scores": {
+    "stockmarket": 1.0
+  },
+  "per_query": {
+    "stockmarket/query1": {
+      "passed": true,
+      "trials": 2,
+      "pass_count": 2
+    },
+    "stockmarket/query2": {
+      "passed": true,
+      "trials": 2,
+      "pass_count": 2
+    },
+    "stockmarket/query3": {
+      "passed": true,
+      "trials": 2,
+      "pass_count": 2
+    },
+    "stockmarket/query4": {
+      "passed": true,
+      "trials": 2,
+      "pass_count": 2
+    },
+    "stockmarket/query5": {
+      "passed": true,
+      "trials": 2,
+      "pass_count": 2
+    }
+  }
+}

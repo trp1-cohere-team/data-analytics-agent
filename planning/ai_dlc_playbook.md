@@ -26,10 +26,9 @@ Scope:
 - Mob approval log: `planning/mob_session_log.md`
 - Agent mission/contract: `agent/AGENT.md`
 - Runtime orchestration: `agent/runtime/conductor.py`
-- Step execution worker: `agent/runtime/worker.py`
-- Routing logic: `agent/data_agent/router.py`, `agent/runtime/routing.py`
+- Tool policy and registry: `agent/runtime/tooling.py`
 - Evaluation harness: `eval/README.md`, `eval/run_trials.py`, `eval/run_dab_benchmark.py`, `eval/score_results.py`
-- Output artifacts: `results/README.md`
+- Output artifacts: `results/score_log.md`
 - Corrections memory: `kb/corrections/corrections_log.md`
 
 ## Roles and Ownership (RACI-lite)

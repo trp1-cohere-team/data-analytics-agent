@@ -1,0 +1,38 @@
+# tools.yaml — OracleForge MCP tool configuration (all 4 DB types)
+# FR-03: Single unified MCP configuration. MCPClient reads this at init.
+# Google MCP Toolbox handles postgres/mongodb/sqlite; DuckDB uses custom bridge.
+sources:
+  postgres_db:
+    kind: postgres
+    connection: ${POSTGRES_URL}
+  mongo_db:
+    kind: mongodb
+    connection: ${MONGODB_URL}
+    database: ${MONGODB_DB}
+  sqlite_db:
+    kind: sqlite
+    path: ${SQLITE_PATH}
+  duckdb_bridge:
+    kind: duckdb_bridge          # custom — NOT a Google MCP Toolbox kind
+    endpoint: ${DUCKDB_BRIDGE_URL}
+    path: ${DUCKDB_PATH}
+    read_only: true
+    timeout_seconds: ${DUCKDB_BRIDGE_TIMEOUT_SECONDS}
+
+tools:
+  query_postgresql:
+    kind: postgres-sql
+    source: postgres_db
+    description: "Execute read-only SQL against PostgreSQL"
+  query_mongodb:
+    kind: mongodb-aggregate
+    source: mongo_db
+    description: "Execute aggregation pipeline against MongoDB"
+  query_sqlite:
+    kind: sqlite-sql
+    source: sqlite_db
+    description: "Execute read-only SQL against SQLite"
+  query_duckdb:
+    kind: duckdb_bridge_sql       # custom kind; handled by DuckDBBridgeClient
+    source: duckdb_bridge
+    description: "Execute read-only SQL against DuckDB via custom MCP bridge"

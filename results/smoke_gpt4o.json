@@ -1,0 +1,122 @@
+[
+  {
+    "dataset": "stockmarket",
+    "query_id": "query1",
+    "trial": 1,
+    "question": "What was the maximum adjusted closing price in 2020 for The RealReal, Inc.?",
+    "answer": "The maximum adjusted closing price for The RealReal, Inc. (ticker symbol REAL) in 2020 was $18.44.",
+    "confidence": 1.0,
+    "trace_id": "4abd8fb6-b6cd-44fc-aa4c-98a62f02d69d",
+    "pass": true,
+    "ground_truth": "18.440000534057617",
+    "duration_s": 11.347
+  },
+  {
+    "dataset": "stockmarket",
+    "query_id": "query1",
+    "trial": 2,
+    "question": "What was the maximum adjusted closing price in 2020 for The RealReal, Inc.?",
+    "answer": "The maximum adjusted closing price for The RealReal, Inc. (ticker symbol REAL) in 2020 was $18.44.",
+    "confidence": 1.0,
+    "trace_id": "eecbebf0-b49c-43bc-8819-5ec16289a3bc",
+    "pass": true,
+    "ground_truth": "18.440000534057617",
+    "duration_s": 9.323
+  },
+  {
+    "dataset": "stockmarket",
+    "query_id": "query2",
+    "trial": 1,
+    "question": "List all ETF securities listed on NYSE Arca that reached an adjusted closing price above $200 at any point during 2015, and also report the total number of such ETFs.",
+    "answer": "TOOL_CALL: {\"tool\": \"query_duckdb\", \"parameters\": {\"sql\": \"SELECT DISTINCT table_name FROM information_schema.tables WHERE table_name IN ('AAAU', 'AADR', 'ABEQ', 'ACSG', 'ACWF', 'AFK', 'AFLG', 'AFMC', 'AFSM', 'AFTY', 'AGG', 'AGGP', 'AGGY')\"}\"}",
+    "confidence": 1.0,
+    "trace_id": "5ebf2dba-d2da-494c-a622-e8b32b35a752",
+    "pass": false,
+    "ground_truth": "ProShares Ultra Bloomberg Natural Gas",
+    "duration_s": 9.429
+  },
+  {
+    "dataset": "stockmarket",
+    "query_id": "query2",
+    "trial": 2,
+    "question": "List all ETF securities listed on NYSE Arca that reached an adjusted closing price above $200 at any point during 2015, and also report the total number of such ETFs.",
+    "answer": "TOOL_CALL: {\"tool\": \"query_duckdb\", \"parameters\": {\"sql\": \"SELECT Symbol FROM stockinfo WHERE ETF = 'Y' AND \\\"Listing Exchange\\\" = 'P'\"}\"}",
+    "confidence": 1.0,
+    "trace_id": "cf9222da-1ff6-47b5-87cf-7d37d60fd486",
+    "pass": false,
+    "ground_truth": "ProShares Ultra Bloomberg Natural Gas",
+    "duration_s": 7.056
+  },
+  {
+    "dataset": "stockmarket",
+    "query_id": "query3",
+    "trial": 1,
+    "question": "List all company names on the NASDAQ-listed Market that were financially troubled (delinquent, deficient, or both) and have trading volume in 2008, for each, report its exisiting non-null average dail",
+    "answer": "TOOL_CALL: {\"tool\": \"query_sqlite\", \"parameters\": {\"sql\": \"SELECT \\\"Company Description\\\", Symbol FROM stockinfo WHERE \\\"Nasdaq Traded\\\" = 'Y' AND \\\"Financial Status\\\" IN ('D', 'E')\"}}}",
+    "confidence": 0.1,
+    "trace_id": "660a125d-d8e9-46ca-a34c-7fdde08fbf56",
+    "pass": false,
+    "ground_truth": "Apex Global Brands Inc,23781.42",
+    "duration_s": 4.812
+  },
+  {
+    "dataset": "stockmarket",
+    "query_id": "query3",
+    "trial": 2,
+    "question": "List all company names on the NASDAQ-listed Market that were financially troubled (delinquent, deficient, or both) and have trading volume in 2008, for each, report its exisiting non-null average dail",
+    "answer": "TOOL_CALL: {\"tool\": \"query_duckdb\", \"parameters\": {\"sql\": \"SELECT AVG(Volume) as avg_volume FROM AGMH WHERE Date LIKE '2008%'\"}\"}",
+    "confidence": 1.0,
+    "trace_id": "bc2360bd-9304-4780-8b00-bb8f0969bdd3",
+    "pass": false,
+    "ground_truth": "Apex Global Brands Inc,23781.42",
+    "duration_s": 42.086
+  },
+  {
+    "dataset": "stockmarket",
+    "query_id": "query4",
+    "trial": 1,
+    "question": "What are the names (not symbol) of the top 5 non-ETF stocks listed on the New York Stock Exchange (NYSE) that had more up days than down days in 2017? (Up days: closing price > opening price; Down day",
+    "answer": "TOOL_CALL: {\"tool\": \"query_sqlite\", \"parameters\": {\"sql\": \"SELECT Symbol, \\\"Company Description\\\" FROM stockinfo WHERE \\\"Listing Exchange\\\" = 'N' AND ETF = 'N'\"}\"}",
+    "confidence": 1.0,
+    "trace_id": "4b6f0c57-760c-489a-8858-6f70d54c3c4d",
+    "pass": false,
+    "ground_truth": "MFA Financial, Inc",
+    "duration_s": 20.628
+  },
+  {
+    "dataset": "stockmarket",
+    "query_id": "query4",
+    "trial": 2,
+    "question": "What are the names (not symbol) of the top 5 non-ETF stocks listed on the New York Stock Exchange (NYSE) that had more up days than down days in 2017? (Up days: closing price > opening price; Down day",
+    "answer": "The query results do not provide the necessary data to determine the top 5 non-ETF stocks listed on the NYSE that had more up days than down days in 2017. Additional data on daily opening and closing prices for each stock in 2017 is required to make this determination.",
+    "confidence": 0.32499999999999996,
+    "trace_id": "613bfa71-84b3-4f65-8b05-d31febeeb395",
+    "pass": false,
+    "ground_truth": "MFA Financial, Inc",
+    "duration_s": 64.873
+  },
+  {
+    "dataset": "stockmarket",
+    "query_id": "query5",
+    "trial": 1,
+    "question": "Which 5 companies listed on the NASDAQ Capital Market had the highest number of days in 2019 where the intraday price range exceeded 20% of the low price, list the company names please?",
+    "answer": "TOOL_CALL: {\"tool\": \"query_sqlite\", \"parameters\": {\"sql\": \"SELECT \\\"Company Description\\\" FROM stockinfo WHERE \\\"Market Category\\\" = 'S' AND \\\"Nasdaq Traded\\\" = 'Y' AND ETF = 'N' AND \\\"Financial Status\\\" = 'N'\"}\"}",
+    "confidence": 0.1,
+    "trace_id": "af93221b-9e52-4842-9892-ae3630f94dc1",
+    "pass": false,
+    "ground_truth": "Synthesis Energy Systems, Inc. - Common Stock",
+    "duration_s": 3.33
+  },
+  {
+    "dataset": "stockmarket",
+    "query_id": "query5",
+    "trial": 2,
+    "question": "Which 5 companies listed on the NASDAQ Capital Market had the highest number of days in 2019 where the intraday price range exceeded 20% of the low price, list the company names please?",
+    "answer": "TOOL_CALL: {\"tool\": \"query_sqlite\", \"parameters\": {\"sql\": \"SELECT \\\"Company Description\\\", Symbol FROM stockinfo WHERE \\\"Market Category\\\" = 'S' AND \\\"Nasdaq Traded\\\" = 'Y' AND ETF = 'N' AND \\\"Financial Status\\\" = 'N'\"}\"}",
+    "confidence": 1.0,
+    "trace_id": "6fc7347d-ea17-4e83-9698-3cdc1793b3bc",
+    "pass": false,
+    "ground_truth": "Synthesis Energy Systems, Inc. - Common Stock",
+    "duration_s": 15.202
+  }
+]

@@ -92,3 +92,7 @@ Each pattern states the user intent, data sources, and computation path.
 - Never filter on exchange or ETF fields in DuckDB.
 - Never use `Company Description` as a durable join key.
 - Always treat `Symbol` as the bridge from metadata to per-ticker tables.
+
+## Injection Test Evidence
+- Test query: "What is the safe two-step pattern for metadata-filtered market metrics?"
+- Expected answer: "Filter the symbol universe in SQLite first, then compute market metrics in DuckDB symbol tables and synthesize results."

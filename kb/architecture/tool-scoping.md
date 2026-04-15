@@ -43,3 +43,7 @@ tools:
 - Path fixed to `DUCKDB_PATH`
 - Timeout: `DUCKDB_BRIDGE_TIMEOUT_SECONDS` (default 8s)
 - Error types: `query` | `policy` | `config`
+
+## Injection Test Evidence
+- Test query: "Which tool should handle DuckDB SQL and why?"
+- Expected answer: "`query_duckdb` should be used, because DuckDB queries are scoped to the DuckDB bridge source and enforced read-only."

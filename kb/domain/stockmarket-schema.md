@@ -110,3 +110,7 @@ WHERE Date >= '2020-01-01' AND Date < '2021-01-01'
 - `REAL` is the ticker for The RealReal.
 - If the question asks about "companies", the answer still needs to route through `stockinfo.Symbol`.
 - If the question asks about "daily moves", "adjusted close", or "volume", the actual computation belongs in DuckDB after the ticker universe is known.
+
+## Injection Test Evidence
+- Test query: "Where do exchange filters and adjusted-close calculations belong in stockmarket queries?"
+- Expected answer: "Exchange filters belong in SQLite `stockinfo`; adjusted-close calculations belong in DuckDB ticker tables."

@@ -55,3 +55,7 @@ U1 Foundation (types, config, events, utils)
               └── U4 Agent + Sandbox (execution_planner, result_synthesizer, oracle_forge_agent)
                     └── U5 Eval + Supporting (eval/, kb/, tests/, tools.yaml)
 ```
+
+## Injection Test Evidence
+- Test query: "What context layers are injected before OracleForge answers a query?"
+- Expected answer: "Six layers are injected in precedence order: user question, interaction memory, runtime context, institutional knowledge, human annotations, and table usage."

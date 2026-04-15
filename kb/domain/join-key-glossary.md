@@ -76,3 +76,7 @@ For ranking many securities:
 | use DuckDB to filter `ETF = 'Y'` | ETF flag lives in SQLite `stockinfo` |
 | query `Adj Close` without quotes | Use `"Adj Close"` |
 | assume every SQLite symbol has a DuckDB table | Verify existence through `information_schema.tables` |
+
+## Injection Test Evidence
+- Test query: "What is the canonical join-key strategy between stockinfo and stocktrade data?"
+- Expected answer: "Use `stockinfo.Symbol` as the bridge to DuckDB table names; there is no shared ticker column in DuckDB price rows."

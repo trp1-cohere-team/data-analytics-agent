@@ -1,12 +1,12 @@
 {
   "pass_at_1": 0.0,
-  "total_queries": 1,
+  "total_queries": 5,
   "passed_queries": 0,
   "dataset_scores": {
     "stockmarket": 0.0
   },
   "per_query": {
-    "stockmarket/query2_manual": {
+    "stockmarket/query1": {
       "passed": false,
       "trials": 1,
       "pass_count": 0,
@@ -14,16 +14,60 @@
         {
           "trial": 1,
           "passed": false,
-          "trace_id": "d59db72b-b749-46f4-ad3c-f7a4a05d0762",
-          "tool_call_trace": [
-            {
-              "tool_name": "query_sqlite",
-              "params": {
-                "sql": "SELECT Symbol, \"Company Description\" FROM stockinfo WHERE ETF = 'Y' AND \"Listing Exchange\" = 'P'"
-              },
-              "success": false
-            }
-          ]
+          "trace_id": "4b1f076b-cb89-4ddc-837f-eab3e5d1fc42",
+          "tool_call_trace": []
+        }
+      ]
+    },
+    "stockmarket/query2": {
+      "passed": false,
+      "trials": 1,
+      "pass_count": 0,
+      "records": [
+        {
+          "trial": 1,
+          "passed": false,
+          "trace_id": "1233c554-1f8e-4275-b185-6a2429039cb4",
+          "tool_call_trace": []
+        }
+      ]
+    },
+    "stockmarket/query3": {
+      "passed": false,
+      "trials": 1,
+      "pass_count": 0,
+      "records": [
+        {
+          "trial": 1,
+          "passed": false,
+          "trace_id": "cbfab0a2-b2f6-4357-badf-521dd5a9f9e5",
+          "tool_call_trace": []
+        }
+      ]
+    },
+    "stockmarket/query4": {
+      "passed": false,
+      "trials": 1,
+      "pass_count": 0,
+      "records": [
+        {
+          "trial": 1,
+          "passed": false,
+          "trace_id": "5456b312-c76f-4946-9949-f2392c96d228",
+          "tool_call_trace": []
+        }
+      ]
+    },
+    "stockmarket/query5": {
+      "passed": false,
+      "trials": 1,
+      "pass_count": 0,
+      "records": [
+        {
+          "trial": 1,
+          "passed": false,
+          "trace_id": "7d3d27ae-6c23-400e-86b3-aaf25f531c07",
+          "tool_call_trace": []
         }
       ]
     }

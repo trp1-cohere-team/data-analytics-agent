@@ -5,7 +5,6 @@ claude-code-source-code-full-main/
 external/
 .codex/
 .codex
-.oracle_forge_memory/
 __pycache__/
 *.pyc
 *.pyo
@@ -43,7 +42,6 @@ htmlcov/
 *.egg-info/
 
 # Runtime artifacts
-.oracle_forge_memory/
 *.jsonl
 command.md/
 # Local data/results (keep repo clean)
@@ -54,7 +52,6 @@ results/
 *.sqlite
 *.sqlite3
 planning/
-signal/
 # Local benchmark clone
 external/
 
@@ -70,7 +67,6 @@ docker-compose.mcp.yml
 .env
 .env.*
 !.env.example
-
 # Python env + caches
 .venv/
 venv/
@@ -83,7 +79,6 @@ htmlcov/
 *.egg-info/
 
 # Runtime artifacts
-.oracle_forge_memory/
 *.jsonl
 
 # Local data/results (keep repo clean)

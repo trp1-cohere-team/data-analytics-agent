@@ -889,3 +889,136 @@ Append-only log of recent stockmarket-specific corrections and fixes used to har
 - **Error**: null values in required column
 - **Fix**: Verify that the expected data exists, check data formats and encoding.
 - **Retry**: 1
+
+### Correction — 2026-04-15T17:29:37.657844+00:00
+- **Session**: probe-mg
+- **Category**: query
+- **Error**: simulated persistent failure
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-15T17:29:37.658044+00:00
+- **Session**: probe-mg
+- **Category**: query
+- **Error**: simulated persistent failure
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-15T17:29:37.658203+00:00
+- **Session**: probe-mg
+- **Category**: query
+- **Error**: simulated persistent failure
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-15T17:29:37.658469+00:00
+- **Session**: probe-mg
+- **Category**: query
+- **Error**: simulated persistent failure
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-15T17:29:37.658620+00:00
+- **Session**: probe-mg
+- **Category**: query
+- **Error**: simulated persistent failure
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-15T17:29:37.658766+00:00
+- **Session**: probe-mg
+- **Category**: query
+- **Error**: simulated persistent failure
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-15T17:29:37.659053+00:00
+- **Session**: probe-mg
+- **Category**: query
+- **Error**: simulated persistent failure
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-15T17:29:37.659202+00:00
+- **Session**: probe-mg
+- **Category**: query
+- **Error**: simulated persistent failure
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-15T17:29:37.659344+00:00
+- **Session**: probe-mg
+- **Category**: query
+- **Error**: simulated persistent failure
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-15T17:29:37.659608+00:00
+- **Session**: probe-mg
+- **Category**: query
+- **Error**: simulated persistent failure
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-15T17:29:37.659751+00:00
+- **Session**: probe-mg
+- **Category**: query
+- **Error**: simulated persistent failure
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-15T17:29:37.659893+00:00
+- **Session**: probe-mg
+- **Category**: query
+- **Error**: simulated persistent failure
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-15T17:29:37.660185+00:00
+- **Session**: probe-mg
+- **Category**: query
+- **Error**: simulated persistent failure
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-15T17:29:37.660334+00:00
+- **Session**: probe-mg
+- **Category**: query
+- **Error**: simulated persistent failure
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-15T17:29:37.660476+00:00
+- **Session**: probe-mg
+- **Category**: query
+- **Error**: simulated persistent failure
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-15T17:29:37.660730+00:00
+- **Session**: probe-mg
+- **Category**: query
+- **Error**: simulated persistent failure
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-15T17:29:37.660891+00:00
+- **Session**: probe-mg
+- **Category**: query
+- **Error**: simulated persistent failure
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-15T17:29:37.661062+00:00
+- **Session**: probe-mg
+- **Category**: query
+- **Error**: simulated persistent failure
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-15T17:29:37.668579+00:00
+- **Session**: probe-mg
+- **Category**: data-quality
+- **Error**: null values in required column
+- **Fix**: Verify that the expected data exists, check data formats and encoding.
+- **Retry**: 1

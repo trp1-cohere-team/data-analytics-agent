@@ -18,9 +18,7 @@
 - All links above are public and viewable without login.
 # Signal Corps Engagement Log
 ## Team Cohere — TRP1 FDE Programme — Oracle Forge Weeks 8–9
-
 ---
-
 ## Daily Slack Posts
 
 | Date | Channel Link | Notes |

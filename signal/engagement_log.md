@@ -13,7 +13,6 @@
 ### 2026-04-13 — Public Context-Engineering Discussion
 - URL: https://github.com/openai/agents.md/issues/11#issuecomment-3366858928
 - Technical substance: context-file flattening and practical context-injection mechanics.
-
 ## Accessibility Check
 - All links above are public and viewable without login.
 # Signal Corps Engagement Log
@@ -31,9 +30,7 @@
 | 2026-04-13 | https://10academytrp1-vwm3694.slack.com/archives/C0ARSK8MT2N/p1776063986801489 | Week 8 Day 4 update — part 3 |
 | 2026-04-14 | https://10academytrp1-vwm3694.slack.com/archives/C0ARSK8MT2N/p1776158314780339 | Week 8 Day 5 team update |
 | 2026-04-15 | https://10academytrp1-vwm3694.slack.com/archives/C0ARSK8MT2N/p1776259985478869 | Week 9 Day 1 team update |
-
 ---
-
 ## Published Articles
 
 | Date | Platform | Link | Title | Word Count |

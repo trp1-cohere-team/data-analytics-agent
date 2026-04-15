@@ -179,12 +179,14 @@ def run_trials(
                     answer = result.answer
                     confidence = result.confidence
                     trace_id = result.trace_id
+                    tool_call_trace = result.tool_calls
                     passed = _answer_passes(answer, ground_truth)
                 except Exception as exc:
                     logger.error("Agent raised exception: %s", exc, exc_info=True)
                     answer = "Agent error"
                     confidence = 0.0
                     trace_id = ""
+                    tool_call_trace = []
                     passed = False
 
                 duration_s = time.monotonic() - t0
@@ -197,6 +199,7 @@ def run_trials(
                     "answer": answer[:500],
                     "confidence": confidence,
                     "trace_id": trace_id,
+                    "tool_call_trace": tool_call_trace,
                     "pass": passed,
                     "ground_truth": ground_truth[:200],
                     "duration_s": round(duration_s, 3),

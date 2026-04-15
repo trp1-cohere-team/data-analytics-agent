@@ -1,35 +1,31 @@
 {
-  "pass_at_1": 1.0,
-  "total_queries": 5,
-  "passed_queries": 5,
+  "pass_at_1": 0.0,
+  "total_queries": 1,
+  "passed_queries": 0,
   "dataset_scores": {
-    "stockmarket": 1.0
+    "stockmarket": 0.0
   },
   "per_query": {
-    "stockmarket/query1": {
-      "passed": true,
-      "trials": 2,
-      "pass_count": 2
-    },
-    "stockmarket/query2": {
-      "passed": true,
-      "trials": 2,
-      "pass_count": 2
-    },
-    "stockmarket/query3": {
-      "passed": true,
-      "trials": 2,
-      "pass_count": 2
-    },
-    "stockmarket/query4": {
-      "passed": true,
-      "trials": 2,
-      "pass_count": 2
-    },
-    "stockmarket/query5": {
-      "passed": true,
-      "trials": 2,
-      "pass_count": 2
+    "stockmarket/query2_manual": {
+      "passed": false,
+      "trials": 1,
+      "pass_count": 0,
+      "records": [
+        {
+          "trial": 1,
+          "passed": false,
+          "trace_id": "d59db72b-b749-46f4-ad3c-f7a4a05d0762",
+          "tool_call_trace": [
+            {
+              "tool_name": "query_sqlite",
+              "params": {
+                "sql": "SELECT Symbol, \"Company Description\" FROM stockinfo WHERE ETF = 'Y' AND \"Listing Exchange\" = 'P'"
+              },
+              "success": false
+            }
+          ]
+        }
+      ]
     }
   }
 }

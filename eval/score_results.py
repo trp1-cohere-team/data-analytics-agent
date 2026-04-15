@@ -54,11 +54,21 @@ def compute_pass_at_1(results: list[dict]) -> tuple[float, dict]:
 
     # Group by (dataset, query_id)
     queries: dict[str, list[bool]] = {}
+    query_records: dict[str, list[dict]] = {}
     for r in results:
         key = f"{r.get('dataset', 'unknown')}/{r.get('query_id', 'unknown')}"
         if key not in queries:
             queries[key] = []
+            query_records[key] = []
         queries[key].append(bool(r.get("pass", False)))
+        query_records[key].append(
+            {
+                "trial": int(r.get("trial", 0)),
+                "passed": bool(r.get("pass", False)),
+                "trace_id": str(r.get("trace_id", "")),
+                "tool_call_trace": r.get("tool_call_trace", []),
+            }
+        )
 
     per_query: dict[str, dict] = {}
     passed_count = 0
@@ -68,6 +78,7 @@ def compute_pass_at_1(results: list[dict]) -> tuple[float, dict]:
             "passed": passed,
             "trials": len(trial_passes),
             "pass_count": sum(trial_passes),
+            "records": sorted(query_records.get(key, []), key=lambda x: x["trial"]),
         }
         if passed:
             passed_count += 1

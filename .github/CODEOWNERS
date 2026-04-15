@@ -1,0 +1,23 @@
+# Cohere team code ownership map (Week 8-9)
+
+# Drivers
+/agent/runtime/ @nurye @kemeriya
+/agent/data_agent/oracle_forge_agent.py @nurye @kemeriya
+/agent/AGENT.md @nurye @kemeriya
+/sandbox/ @nurye @kemeriya
+/tools.yaml @nurye @kemeriya
+/README.md @nurye @kemeriya
+
+# Intelligence Officers
+/kb/ @ephrata @amare
+/probes/ @ephrata @amare
+/tests/test_probes.py @ephrata @amare
+/tests/test_properties.py @ephrata @amare
+/docs/ @ephrata @amare
+/aidlc-docs/ @ephrata @amare
+
+# Signal Corps
+/results/ @addisu @yohannes
+/eval/ @addisu @yohannes
+/aidlc-docs/construction/build-and-test/ @addisu @yohannes
+/planning/ @addisu @yohannes

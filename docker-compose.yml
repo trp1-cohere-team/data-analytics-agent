@@ -32,7 +32,7 @@ services:
       retries: 20
 
   mcp-toolbox:
-    image: us-central1-docker.pkg.dev/database-toolbox/toolbox/toolbox:0.30.0
+    image: us-central1-docker.pkg.dev/database-toolbox/toolbox/toolbox:latest
     container_name: oracle_forge_mcp_toolbox
     restart: unless-stopped
     depends_on:

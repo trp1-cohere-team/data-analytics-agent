@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from typing import Any, Optional
 
 import requests
@@ -28,6 +29,9 @@ from agent.data_agent.config import (
 )
 from agent.data_agent.duckdb_bridge_client import DuckDBBridgeClient
 from agent.data_agent.types import InvokeResult, ToolDescriptor
+
+_MONGODB_URL = os.environ.get("MONGODB_URL", "mongodb://localhost:27017")
+_MONGODB_DB = os.environ.get("MONGODB_DB", "oracle_forge")
 from utils.db_utils import db_type_from_kind
 
 logger = logging.getLogger(__name__)
@@ -153,11 +157,17 @@ class MCPClient:
     def _invoke_toolbox(
         self, tool: ToolDescriptor, params: dict, db_type: str
     ) -> InvokeResult:
-        """Dispatch to Google MCP Toolbox at ``MCP_TOOLBOX_URL``."""
+        """Dispatch to Google MCP Toolbox at ``MCP_TOOLBOX_URL`` via JSON-RPC."""
+        payload = {
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "id": 1,
+            "params": {"name": tool.name, "arguments": params},
+        }
         try:
             resp = requests.post(
-                f"{MCP_TOOLBOX_URL}/api/tool/{tool.name}/invoke",
-                json=params,
+                f"{MCP_TOOLBOX_URL}/mcp",
+                json=payload,
                 timeout=MCP_TIMEOUT_SECONDS,
             )
             resp.raise_for_status()
@@ -187,12 +197,42 @@ class MCPClient:
                 db_type=db_type,
             )
 
+        if "error" in data:
+            return InvokeResult(
+                success=False,
+                tool_name=tool.name,
+                error=str(data["error"]),
+                error_type="toolbox_error",
+                db_type=db_type,
+            )
+
+        # JSON-RPC result: {"result": {"content": [{"type": "text", "text": "{...}"}], "isError": bool}}
+        rpc_result = data.get("result", {})
+        if rpc_result.get("isError"):
+            raw_text = (rpc_result.get("content") or [{}])[0].get("text", "toolbox_error")
+            return InvokeResult(
+                success=False,
+                tool_name=tool.name,
+                error=raw_text,
+                error_type="query_error",
+                db_type=db_type,
+            )
+
+        try:
+            content = rpc_result["content"]
+            if len(content) == 1:
+                result = json.loads(content[0]["text"])
+            else:
+                result = [json.loads(item["text"]) for item in content]
+        except (KeyError, IndexError, json.JSONDecodeError):
+            result = rpc_result
+
         return InvokeResult(
-            success=data.get("success", True),
+            success=True,
             tool_name=tool.name,
-            result=data.get("result"),
-            error=data.get("error", ""),
-            error_type=data.get("error_type", ""),
+            result=result,
+            error="",
+            error_type="",
             db_type=db_type,
         )
 
@@ -207,3 +247,48 @@ class MCPClient:
             error=stub.get("error", ""),
             db_type=db_type,
         )
+
+    @staticmethod
+    def _invoke_mongodb_direct(params: dict, db_type: str) -> InvokeResult:
+        """Fallback: run MongoDB aggregation directly via PyMongo.
+
+        Used when MCP Toolbox v0.30.0 mongodb-aggregate returns empty content.
+        """
+        try:
+            import pymongo  # deferred — only needed as fallback
+        except ImportError:
+            return InvokeResult(
+                success=False,
+                tool_name="query_mongodb",
+                error="pymongo not installed",
+                error_type="config",
+                db_type=db_type,
+            )
+        try:
+            collection = params.get("collection", "")
+            pipeline_str = params.get("pipeline", "[]")
+            pipeline = json.loads(pipeline_str)
+            client = pymongo.MongoClient(_MONGODB_URL, serverSelectionTimeoutMS=5000)
+            db = client[_MONGODB_DB]
+            rows = list(db[collection].aggregate(pipeline))
+            # Strip ObjectId fields so result is JSON-serialisable
+            for row in rows:
+                row.pop("_id", None)
+            result = rows[0] if len(rows) == 1 else rows
+            logger.debug("MongoDB direct fallback: %d rows from %s", len(rows), collection)
+            return InvokeResult(
+                success=True,
+                tool_name="query_mongodb",
+                result=result,
+                error="",
+                error_type="",
+                db_type=db_type,
+            )
+        except Exception as exc:
+            return InvokeResult(
+                success=False,
+                tool_name="query_mongodb",
+                error=f"mongodb_direct_error: {exc}",
+                error_type="query_error",
+                db_type=db_type,
+            )

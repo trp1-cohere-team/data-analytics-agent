@@ -1,8 +1,8 @@
-"""Local DB server — drop-in replacement for Google MCP Toolbox + DuckDB bridge.
+"""Local DB server — custom MCP server for DuckDB + legacy bridge endpoints.
 
-Runs on a single port (default 5000) and serves both:
-  - SQLite queries  : POST /api/tool/query_sqlite/invoke  (MCP Toolbox wire format)
-  - DuckDB queries  : POST /invoke                        (DuckDB bridge wire format)
+Runs on a single port (default 5001) and serves:
+  - MCP JSON-RPC    : POST /mcp                           (MCP protocol — query_duckdb)
+  - DuckDB queries  : POST /invoke                        (legacy bridge wire format)
   - Health check    : GET  /health
   - Tool discovery  : GET  /tools                         (bridge discovery)
 
@@ -102,20 +102,59 @@ def _run_duckdb(sql: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Routes — MCP Toolbox style (SQLite)
+# MCP JSON-RPC endpoint (custom DuckDB MCP server)
 # ---------------------------------------------------------------------------
 
-@app.route("/api/tool/query_sqlite/invoke", methods=["POST"])
-def sqlite_invoke():
-    params = request.get_json(force=True) or {}
-    sql = params.get("sql", "").strip()
-    if not sql:
-        return jsonify({"success": False, "error": "missing sql param", "result": None}), 400
-    return jsonify(_run_sqlite(sql))
+_MCP_TOOL_SCHEMA = {
+    "name": "query_duckdb",
+    "description": "Execute read-only SQL against DuckDB.",
+    "inputSchema": {
+        "type": "object",
+        "properties": {"sql": {"type": "string", "description": "The SQL to execute."}},
+        "required": ["sql"],
+    },
+}
+
+
+@app.route("/mcp", methods=["POST"])
+def mcp_endpoint():
+    body = request.get_json(force=True) or {}
+    rpc_id = body.get("id", 1)
+    method = body.get("method", "")
+
+    if method == "tools/list":
+        return jsonify({"jsonrpc": "2.0", "id": rpc_id, "result": {"tools": [_MCP_TOOL_SCHEMA]}})
+
+    if method == "tools/call":
+        params = body.get("params", {})
+        tool_name = params.get("name", "")
+        arguments = params.get("arguments", {})
+
+        if tool_name != "query_duckdb":
+            return jsonify({"jsonrpc": "2.0", "id": rpc_id,
+                            "error": {"code": -32602, "message": f"unknown tool: {tool_name}"}})
+
+        sql = arguments.get("sql", "").strip()
+        if not sql:
+            return jsonify({"jsonrpc": "2.0", "id": rpc_id,
+                            "error": {"code": -32602, "message": "missing sql argument"}})
+
+        result = _run_duckdb(sql)
+        if not result["success"]:
+            return jsonify({"jsonrpc": "2.0", "id": rpc_id,
+                            "result": {"content": [{"type": "text", "text": result["error"]}],
+                                       "isError": True}})
+
+        rows = result["result"] or []
+        content = [{"type": "text", "text": __import__("json").dumps(row)} for row in rows]
+        return jsonify({"jsonrpc": "2.0", "id": rpc_id, "result": {"content": content}})
+
+    return jsonify({"jsonrpc": "2.0", "id": rpc_id,
+                    "error": {"code": -32601, "message": f"method not found: {method}"}})
 
 
 # ---------------------------------------------------------------------------
-# Routes — DuckDB bridge style
+# Routes — legacy DuckDB bridge style
 # ---------------------------------------------------------------------------
 
 @app.route("/invoke", methods=["POST"])

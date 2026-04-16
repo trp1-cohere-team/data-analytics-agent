@@ -1364,3 +1364,44 @@ Candidate bindings: "Date", "Open", "Close"
 LINE <NUM>: ... FROM (SELECT * FROM AGMH WHERE Date LIKE <STR>) GROUP BY ...
 - **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
 - **Retry**: 1
+
+### Correction — 2026-04-16T12:53:53.598536+00:00
+- **Session**: 9f74fc5b-9910-438f-9d6f-47b9d4b84fb6
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "table_name" not found in FROM clause!
+Candidate bindings: "Date", "Open", "Close"
+
+LINE <NUM>: ... FROM (SELECT * FROM AGMH WHERE Date LIKE <STR>) GROUP BY ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T12:53:54.958996+00:00
+- **Session**: 9f74fc5b-9910-438f-9d6f-47b9d4b84fb6
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "Symbol" not found in FROM clause!
+Candidate bindings: "Close"
+
+LINE <NUM>: ... FROM (SELECT * FROM AGMH WHERE Date LIKE <STR>) GROUP BY Symbol
+             ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-16T12:54:20.283727+00:00
+- **Session**: 9f74fc5b-9910-438f-9d6f-47b9d4b84fb6
+- **Category**: query
+- **Error**: query_error: Parser Error: syntax error at or near "Category"
+
+LINE <NUM>: ... (SELECT Symbol AS table_name FROM stockinfo WHERE `Market Category` = <STR> AND `Nasdaq Traded` = <STR> AND `ETF` = 'N...
+       ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T12:54:26.472673+00:00
+- **Session**: 9f74fc5b-9910-438f-9d6f-47b9d4b84fb6
+- **Category**: query
+- **Error**: query_error: Parser Error: syntax error at or near "Category"
+
+LINE <NUM>: ... = <STR>) t1 JOIN (SELECT Symbol FROM stockinfo WHERE `Market Category` = <STR> AND `Nasdaq Traded` = <STR> AND `ETF` = 'N...
+   ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1

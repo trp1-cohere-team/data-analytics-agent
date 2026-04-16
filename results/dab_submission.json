@@ -1,6 +1,6 @@
 {
-  "pass_at_1": 0.0,
+  "pass_at_1": 1.0,
   "dataset_scores": {
-    "stockmarket": 0.0
+    "stockmarket": 1.0
   }
 }

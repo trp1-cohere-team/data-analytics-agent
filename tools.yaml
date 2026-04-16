@@ -24,10 +24,26 @@ tools:
     kind: postgres-sql
     source: postgres_db
     description: "Execute read-only SQL against PostgreSQL"
-  query_mongodb:
+  query_mongodb_yelp_review:
     kind: mongodb-aggregate
     source: mongo_db
-    description: "Execute aggregation pipeline against MongoDB"
+    description: "Execute aggregation pipeline against MongoDB yelp_review collection"
+  query_mongodb_yelp_user:
+    kind: mongodb-aggregate
+    source: mongo_db
+    description: "Execute aggregation pipeline against MongoDB yelp_user collection"
+  query_mongodb_yelp_tip:
+    kind: mongodb-aggregate
+    source: mongo_db
+    description: "Execute aggregation pipeline against MongoDB yelp_tip collection"
+  query_mongodb_agnews_authors:
+    kind: mongodb-aggregate
+    source: mongo_db
+    description: "Execute aggregation pipeline against MongoDB agnews_authors collection"
+  query_mongodb_agnews_article_metadata:
+    kind: mongodb-aggregate
+    source: mongo_db
+    description: "Execute aggregation pipeline against MongoDB agnews_article_metadata collection"
   query_sqlite:
     kind: sqlite-sql
     source: sqlite_db

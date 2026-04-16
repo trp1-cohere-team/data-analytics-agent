@@ -1,8 +1,8 @@
 """Private DuckDB MCP bridge client.
 
-FR-03b: Speaks the custom DuckDB bridge wire protocol.
-- Schema discovery: GET {DUCKDB_BRIDGE_URL}/tools
-- Query execution: POST {DUCKDB_BRIDGE_URL}/invoke
+FR-03b: Speaks the MCP JSON-RPC protocol against the custom DuckDB MCP server.
+- Schema discovery: POST {DUCKDB_BRIDGE_URL}/mcp  (tools/list)
+- Query execution:  POST {DUCKDB_BRIDGE_URL}/mcp  (tools/call)
 
 **PRIVATE**: Imported ONLY by mcp_toolbox_client.py. No other module
 should reference this file.
@@ -126,10 +126,16 @@ class DuckDBBridgeClient:
                 db_type="duckdb",
             )
 
+        payload = {
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "id": 1,
+            "params": {"name": tool_name, "arguments": {"sql": sql}},
+        }
         try:
             resp = requests.post(
-                f"{self._url}/invoke",
-                json={"tool": tool_name, "parameters": {"sql": sql}},
+                f"{self._url}/mcp",
+                json=payload,
                 timeout=self._timeout,
             )
             resp.raise_for_status()
@@ -159,12 +165,38 @@ class DuckDBBridgeClient:
                 db_type="duckdb",
             )
 
+        if "error" in data:
+            return InvokeResult(
+                success=False,
+                tool_name=tool_name,
+                error=str(data["error"]),
+                error_type="mcp_error",
+                db_type="duckdb",
+            )
+
+        rpc_result = data.get("result", {})
+        if rpc_result.get("isError"):
+            raw = (rpc_result.get("content") or [{}])[0].get("text", "duckdb_error")
+            return InvokeResult(
+                success=False, tool_name=tool_name,
+                error=raw, error_type="query_error", db_type="duckdb",
+            )
+
+        try:
+            content = rpc_result.get("content", [])
+            if len(content) == 1:
+                result = json.loads(content[0]["text"])
+            else:
+                result = [json.loads(item["text"]) for item in content]
+        except (KeyError, IndexError, json.JSONDecodeError):
+            result = rpc_result
+
         return InvokeResult(
-            success=data.get("success", False),
+            success=True,
             tool_name=tool_name,
-            result=data.get("result"),
-            error=data.get("error", ""),
-            error_type=data.get("error_type", ""),
+            result=result,
+            error="",
+            error_type="",
             db_type="duckdb",
         )
 

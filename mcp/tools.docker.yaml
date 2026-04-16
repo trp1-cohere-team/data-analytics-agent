@@ -1,46 +1,88 @@
-kind: sources
-name: postgres_main
-type: postgres
-host: postgres
-port: 5432
-database: oracle_forge
-user: oracle_forge
-password: oracle_forge
----
-kind: sources
-name: sqlite_main
-type: sqlite
-database: ${SQLITE_PATH}
----
-kind: sources
-name: mongo_main
-type: mongodb
-uri: ${MONGODB_URL}
----
-kind: tools
-name: query_postgresql
-type: postgres-execute-sql
-source: postgres_main
-description: Execute SQL against PostgreSQL.
----
-kind: tools
-name: query_sqlite
-type: sqlite-execute-sql
-source: sqlite_main
-description: Execute SQL against SQLite.
----
-kind: tools
-name: query_mongodb
-type: mongodb-aggregate
-source: mongo_main
-description: Execute aggregation pipeline against MongoDB.
-database: ${MONGODB_DB}
-collection: "{{.collection}}"
-pipelinePayload: "{{.pipeline}}"
-pipelineParams:
-  - name: collection
-    type: string
-    description: Collection name to query.
-  - name: pipeline
-    type: string
-    description: JSON array string of aggregation stages.
+sources:
+  postgres_main:
+    kind: postgres
+    host: postgres
+    port: 5432
+    database: oracle_forge
+    user: oracle_forge
+    password: oracle_forge
+
+  sqlite_main:
+    kind: sqlite
+    database: ${SQLITE_PATH}
+
+  mongo_main:
+    kind: mongodb
+    uri: ${MONGODB_URL}/oracle_forge
+
+tools:
+  query_postgresql:
+    kind: postgres-execute-sql
+    source: postgres_main
+    description: Execute read-only SQL against PostgreSQL.
+
+  query_sqlite:
+    kind: sqlite-execute-sql
+    source: sqlite_main
+    description: Execute read-only SQL against SQLite.
+
+  # One tool per MongoDB collection (collection template substitution is broken in toolbox)
+  query_mongodb_yelp_review:
+    kind: mongodb-aggregate
+    source: mongo_main
+    description: Execute aggregation pipeline against MongoDB yelp_review collection.
+    database: oracle_forge
+    collection: yelp_review
+    pipelinePayload: "{{.pipeline}}"
+    pipelineParams:
+      - name: pipeline
+        type: string
+        description: JSON array string of aggregation stages.
+
+  query_mongodb_yelp_user:
+    kind: mongodb-aggregate
+    source: mongo_main
+    description: Execute aggregation pipeline against MongoDB yelp_user collection.
+    database: oracle_forge
+    collection: yelp_user
+    pipelinePayload: "{{.pipeline}}"
+    pipelineParams:
+      - name: pipeline
+        type: string
+        description: JSON array string of aggregation stages.
+
+  query_mongodb_yelp_tip:
+    kind: mongodb-aggregate
+    source: mongo_main
+    description: Execute aggregation pipeline against MongoDB yelp_tip collection.
+    database: oracle_forge
+    collection: yelp_tip
+    pipelinePayload: "{{.pipeline}}"
+    pipelineParams:
+      - name: pipeline
+        type: string
+        description: JSON array string of aggregation stages.
+
+  query_mongodb_agnews_authors:
+    kind: mongodb-aggregate
+    source: mongo_main
+    description: Execute aggregation pipeline against MongoDB agnews_authors collection.
+    database: oracle_forge
+    collection: agnews_authors
+    pipelinePayload: "{{.pipeline}}"
+    pipelineParams:
+      - name: pipeline
+        type: string
+        description: JSON array string of aggregation stages.
+
+  query_mongodb_agnews_article_metadata:
+    kind: mongodb-aggregate
+    source: mongo_main
+    description: Execute aggregation pipeline against MongoDB agnews_article_metadata collection.
+    database: oracle_forge
+    collection: agnews_article_metadata
+    pipelinePayload: "{{.pipeline}}"
+    pipelineParams:
+      - name: pipeline
+        type: string
+        description: JSON array string of aggregation stages.

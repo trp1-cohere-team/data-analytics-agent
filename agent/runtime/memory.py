@@ -169,6 +169,99 @@ class MemoryManager:
             logger.warning("memory: failed to write index: %s", exc)
 
     # ------------------------------------------------------------------
+    # Session consolidation (Layer 3 → Layer 2 + Layer 1)
+    # ------------------------------------------------------------------
+
+    def consolidate_to_topics(
+        self,
+        question: str = "",
+        answer: str = "",
+        tool_calls: list | None = None,
+    ) -> None:
+        """Distill session knowledge into persistent topic files (Layer 2).
+
+        Called at end of each session. Generates:
+        - ``topics/patterns_<domain>.md`` — successful Q&A examples per domain
+        - ``topics/session_summary.md``   — latest session outcome snapshot
+        Both writes update ``index.json`` (Layer 1) automatically.
+        """
+        if tool_calls is None:
+            tool_calls = []
+
+        _failure_phrases = (
+            "unable to determine", "not found", "does not exist",
+            "tool calls failed", "i am unable", "cannot answer",
+            "no such table", "failed because", "i cannot",
+        )
+        is_successful = (
+            bool(answer)
+            and not any(p in answer.lower() for p in _failure_phrases)
+            and any(tc.get("success") for tc in tool_calls)
+        )
+        db_types = list({
+            tc.get("tool_name", "").replace("query_", "")
+            for tc in tool_calls if tc.get("success")
+        })
+        domain = self._detect_domain(question)
+
+        # --- Layer 2a: domain pattern knowledge ---
+        if is_successful and question and answer:
+            key = f"patterns_{domain}"
+            existing = self.load_topic(key) or f"# {domain.replace('_', ' ').title()} Query Patterns\n\n"
+            entry = (
+                f"## Pattern\n"
+                f"Q: {question[:250]}\n"
+                f"A: {answer[:350]}\n"
+                f"DBs: {', '.join(db_types) or 'unknown'}\n\n"
+            )
+            # Avoid storing near-duplicate questions
+            if question[:80] not in existing:
+                # Keep within char cap — drop oldest entries if needed
+                combined = existing + entry
+                if len(combined) > 2000:
+                    # Trim from the top (after header line)
+                    header_end = combined.find("\n\n") + 2
+                    body = combined[header_end:]
+                    blocks = body.split("## Pattern\n")
+                    trimmed = "## Pattern\n" + "## Pattern\n".join(blocks[-(4):])
+                    combined = combined[:header_end] + trimmed
+                self.save_topic(key, combined)
+
+        # --- Layer 2b: session summary ---
+        turns = self.load_session()
+        failed = sum(
+            1 for t in turns
+            if t.role == "assistant" and "Unable to determine" in t.content
+        )
+        successes = sum(1 for tc in tool_calls if tc.get("success"))
+        summary = (
+            f"# Session Summary\n"
+            f"- Session: {self._session_id}\n"
+            f"- Total turns: {len(turns)}\n"
+            f"- Failed answers: {failed}\n"
+            f"- Successful tool calls: {successes}\n"
+            f"- Domain: {domain}\n"
+            f"- Last question: {question[:200]}\n"
+        )
+        self.save_topic("session_summary", summary)
+
+    @staticmethod
+    def _detect_domain(question: str) -> str:
+        """Keyword-based domain detection for topic routing."""
+        q = question.lower()
+        if any(k in q for k in ["nasdaq", "nyse", "stock", "etf", "trading", "intraday", "closing price", "volume"]):
+            return "financial_markets"
+        if any(k in q for k in ["customer", "order", "purchase", "retail", "revenue", "segment"]):
+            return "retail"
+        if any(k in q for k in ["patient", "hospital", "medical", "health", "diagnosis"]):
+            return "healthcare"
+        if any(k in q for k in ["telecom", "subscriber", "call", "network", "carrier"]):
+            return "telecom"
+        if any(k in q for k in ["transaction", "fraud", "aml", "money", "laundering"]):
+            return "finance"
+        return "general"
+
+    # ------------------------------------------------------------------
     # Assembled memory context (for Layer 5)
     # ------------------------------------------------------------------
 

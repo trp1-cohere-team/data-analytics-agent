@@ -29,7 +29,7 @@ openai-layering/
 .env
 .env.*
 !.env.example
-
+command.md
 # Python env + caches
 .venv/
 venv/
@@ -94,7 +94,7 @@ external/
 
 # Local docker override file
 docker-compose.mcp.yml
-
+.oracle_forge_memory/
 # Editor / OS noise
 .vscode/
 .idea/

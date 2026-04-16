@@ -11,6 +11,10 @@ import logging
 import os
 import uuid
 
+from dotenv import load_dotenv
+
+load_dotenv()  # loads .env into os.environ before any config is read
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

@@ -1022,3 +1022,345 @@ Append-only log of recent stockmarket-specific corrections and fixes used to har
 - **Error**: null values in required column
 - **Fix**: Verify that the expected data exists, check data formats and encoding.
 - **Retry**: 1
+
+### Correction — 2026-04-16T00:57:42.924604+00:00
+- **Session**: 0d881093-64e6-4190-8237-5a50901401c2
+- **Category**: db-type
+- **Error**: unknown_tool: <STR> not in registry
+- **Fix**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 1
+
+### Correction — 2026-04-16T00:57:44.541323+00:00
+- **Session**: 0d881093-64e6-4190-8237-5a50901401c2
+- **Category**: db-type
+- **Error**: unknown_tool: <STR> not in registry
+- **Fix**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 2
+
+### Correction — 2026-04-16T00:57:46.086330+00:00
+- **Session**: 0d881093-64e6-4190-8237-5a50901401c2
+- **Category**: db-type
+- **Error**: unknown_tool: <STR> not in registry
+- **Fix**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 3
+
+### Correction — 2026-04-16T00:57:52.250699+00:00
+- **Session**: 0d881093-64e6-4190-8237-5a50901401c2
+- **Category**: db-type
+- **Error**: invalid_code_payload
+- **Fix**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 1
+
+### Correction — 2026-04-16T00:57:53.596927+00:00
+- **Session**: 0d881093-64e6-4190-8237-5a50901401c2
+- **Category**: db-type
+- **Error**: invalid_code_payload
+- **Fix**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 2
+
+### Correction — 2026-04-16T00:57:54.919119+00:00
+- **Session**: 0d881093-64e6-4190-8237-5a50901401c2
+- **Category**: db-type
+- **Error**: unknown_tool: <STR> not in registry
+- **Fix**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 3
+
+### Correction — 2026-04-16T00:57:58.800884+00:00
+- **Session**: 0d881093-64e6-4190-8237-5a50901401c2
+- **Category**: db-type
+- **Error**: unknown_tool: <STR> not in registry
+- **Fix**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 1
+
+### Correction — 2026-04-16T00:58:00.372142+00:00
+- **Session**: 0d881093-64e6-4190-8237-5a50901401c2
+- **Category**: db-type
+- **Error**: unknown_tool: <STR> not in registry
+- **Fix**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 2
+
+### Correction — 2026-04-16T00:58:01.513782+00:00
+- **Session**: 0d881093-64e6-4190-8237-5a50901401c2
+- **Category**: db-type
+- **Error**: unknown_tool: <STR> not in registry
+- **Fix**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 3
+
+### Correction — 2026-04-16T01:05:28.051564+00:00
+- **Session**: 7af53622-225f-4018-a5c9-a35b7da071c2
+- **Category**: query
+- **Error**: query_error: Binder Error: column "Date" must appear in the GROUP BY clause or must be part of an aggregate function.
+Either add it to the GROUP BY list, or use "ANY_VALUE(Date)" if the exact value of...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T01:05:31.339563+00:00
+- **Session**: 7af53622-225f-4018-a5c9-a35b7da071c2
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "Symbol" not found in FROM clause!
+Candidate bindings: "Close"
+
+LINE <NUM>: ...geVolume, Symbol FROM FTR WHERE Date LIKE <STR> GROUP BY Symbol
+              ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-16T01:05:35.961923+00:00
+- **Session**: 7af53622-225f-4018-a5c9-a35b7da071c2
+- **Category**: db-type
+- **Error**: bridge_error: <NUM> Client Error: BAD REQUEST for url: http://localhost:<NUM>/invoke
+- **Fix**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 3
+
+### Correction — 2026-04-16T01:05:39.656838+00:00
+- **Session**: 7af53622-225f-4018-a5c9-a35b7da071c2
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "Volume" not found in FROM clause!
+Candidate bindings: "table_type", "table_schema"
+
+LINE <NUM>: SELECT AVG(Volume) AS AverageVolume, table_name FROM informati...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T01:05:42.524832+00:00
+- **Session**: 7af53622-225f-4018-a5c9-a35b7da071c2
+- **Category**: query
+- **Error**: query_error: Parser Error: syntax error at or near "Status"
+
+LINE <NUM>: ...Volume FROM (SELECT Symbol FROM stockinfo WHERE `Financial Status` IN (<STR>, <STR>) AND `Nasdaq Traded` = <STR>) AS s JOIN...
+       ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T01:05:44.219667+00:00
+- **Session**: 7af53622-225f-4018-a5c9-a35b7da071c2
+- **Category**: query
+- **Error**: query_error: Parser Error: syntax error at or near "Status"
+
+LINE <NUM>: ...Volume FROM (SELECT Symbol FROM stockinfo WHERE `Financial Status` IN (<STR>, <STR>) AND `Nasdaq Traded` = <STR>) AS s JOIN...
+       ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-16T01:05:46.022010+00:00
+- **Session**: 7af53622-225f-4018-a5c9-a35b7da071c2
+- **Category**: query
+- **Error**: query_error: Parser Error: syntax error at or near "Status"
+
+LINE <NUM>: ... table_name IN (SELECT Symbol FROM stockinfo WHERE `Financial Status` IN (<STR>, <STR>) AND `Nasdaq Traded` = <STR>)
+                 ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-16T01:08:06.713836+00:00
+- **Session**: 61d5c99f-f2cf-4207-aa72-642dedc3af80
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "Volume" not found in FROM clause!
+Candidate bindings: "table_type", "table_schema"
+
+LINE <NUM>: SELECT AVG(Volume) AS AverageVolume, table_name FROM informati...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T01:08:08.111739+00:00
+- **Session**: 61d5c99f-f2cf-4207-aa72-642dedc3af80
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "Volume" not found in FROM clause!
+Candidate bindings: "table_type", "table_schema"
+
+LINE <NUM>: SELECT AVG(Volume) AS AverageVolume, table_name FROM informati...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-16T01:08:13.879258+00:00
+- **Session**: 61d5c99f-f2cf-4207-aa72-642dedc3af80
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "table_name" not found in FROM clause!
+Candidate bindings: "Date", "Open", "Close"
+
+LINE <NUM>: ... FROM (SELECT * FROM AGMH WHERE Date LIKE <STR>) GROUP BY ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T01:10:27.921790+00:00
+- **Session**: ef40d449-3b82-4e98-8492-a89c82823b25
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "Volume" not found in FROM clause!
+Candidate bindings: "table_type", "table_schema"
+
+LINE <NUM>: SELECT AVG(Volume) AS AverageVolume, table_name FROM informati...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T01:10:30.838424+00:00
+- **Session**: ef40d449-3b82-4e98-8492-a89c82823b25
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "Volume" not found in FROM clause!
+Candidate bindings: "table_type", "table_schema"
+
+LINE <NUM>: SELECT AVG(Volume) AS AverageVolume, table_name FROM (SELECT *...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-16T01:10:40.298107+00:00
+- **Session**: ef40d449-3b82-4e98-8492-a89c82823b25
+- **Category**: query
+- **Error**: query_error: Parser Error: syntax error at or near "Status"
+
+LINE <NUM>: SELECT Symbol FROM stockinfo WHERE `Financial Status` IN (<STR>, <STR>, <STR>) AND `Nasdaq Traded` = <STR>
+                                ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T01:14:47.326252+00:00
+- **Session**: bc407e9d-0a39-4fdb-bf3e-9e4f6bce2295
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "table_name" not found in FROM clause!
+Candidate bindings: "Date", "Open", "Close"
+
+LINE <NUM>: ... FROM (SELECT * FROM AGMH WHERE Date LIKE <STR>) GROUP BY ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T01:14:52.583970+00:00
+- **Session**: bc407e9d-0a39-4fdb-bf3e-9e4f6bce2295
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "table_name" not found in FROM clause!
+Candidate bindings: "Date", "Open", "Close"
+
+LINE <NUM>: SELECT AVG(Volume) AS AverageVolume, table_name FROM (SELECT * ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-16T01:14:55.024594+00:00
+- **Session**: bc407e9d-0a39-4fdb-bf3e-9e4f6bce2295
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "table_name" not found in FROM clause!
+Candidate bindings: "Date", "Open", "Close"
+
+LINE <NUM>: SELECT AVG(Volume) AS AverageVolume, table_name FROM (SELECT * ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-16T02:34:47.684576+00:00
+- **Session**: 6f060848-5301-4cb5-b91d-8f436ccbd4e7
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT AVG("Close") FROM AAPL
+                                 ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T02:34:52.418392+00:00
+- **Session**: 6f060848-5301-4cb5-b91d-8f436ccbd4e7
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT COUNT(*) FROM AAPL
+                             ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T02:36:58.033213+00:00
+- **Session**: 6fc44106-97a9-453d-8614-998a6046a1ea
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT AVG("Close") FROM AAPL
+                                 ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T02:42:27.782514+00:00
+- **Session**: cabd5f05-4494-46ed-8b58-54f7fce21cae
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "table_name" not found in FROM clause!
+Candidate bindings: "Date", "Open", "Close"
+
+LINE <NUM>: ... FROM (SELECT * FROM AGMH WHERE Date LIKE <STR>) GROUP BY ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T02:42:29.517318+00:00
+- **Session**: cabd5f05-4494-46ed-8b58-54f7fce21cae
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "table_name" not found in FROM clause!
+Candidate bindings: "Date", "Open", "Close"
+
+LINE <NUM>: SELECT AVG(Volume) AS AverageVolume, table_name FROM (SELECT * ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-16T02:43:03.745113+00:00
+- **Session**: 3782105f-1083-48b0-9235-a204ff6ea6be
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "table_name" not found in FROM clause!
+Candidate bindings: "Date", "Open", "Close"
+
+LINE <NUM>: ... FROM (SELECT * FROM AGMH WHERE Date LIKE <STR>) GROUP BY ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T02:43:05.406922+00:00
+- **Session**: 3782105f-1083-48b0-9235-a204ff6ea6be
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "table_name" not found in FROM clause!
+Candidate bindings: "Date", "Open", "Close"
+
+LINE <NUM>: SELECT AVG(Volume) AS AverageVolume, table_name FROM (SELECT * ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-16T02:43:07.153130+00:00
+- **Session**: 3782105f-1083-48b0-9235-a204ff6ea6be
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "table_name" not found in FROM clause!
+Candidate bindings: "Date", "Open", "Close"
+
+LINE <NUM>: SELECT AVG(Volume) AS AverageVolume, table_name FROM (SELECT * ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-16T02:44:17.961268+00:00
+- **Session**: 39c32773-6ad2-4b05-8620-cafc7a594ba8
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "table_name" not found in FROM clause!
+Candidate bindings: "Date", "Open", "Close"
+
+LINE <NUM>: ... FROM (SELECT * FROM AGMH WHERE Date LIKE <STR>) GROUP BY ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T02:45:22.405363+00:00
+- **Session**: 2c1f8bf7-f3ee-4086-aa51-a0ea9a537fc8
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "table_name" not found in FROM clause!
+Candidate bindings: "Date", "Open", "Close"
+
+LINE <NUM>: ... FROM (SELECT * FROM AGMH WHERE Date LIKE <STR>) GROUP BY ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T02:45:24.284918+00:00
+- **Session**: 2c1f8bf7-f3ee-4086-aa51-a0ea9a537fc8
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "table_name" not found in FROM clause!
+Candidate bindings: "Date", "Open", "Close"
+
+LINE <NUM>: ... FROM (SELECT * FROM AGMH WHERE Date LIKE <STR>) GROUP BY ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-16T02:46:05.266703+00:00
+- **Session**: 256bca00-b0cc-4748-b7bc-8b951d19e3ab
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "table_name" not found in FROM clause!
+Candidate bindings: "Date", "Open", "Close"
+
+LINE <NUM>: ... FROM (SELECT * FROM AGMH WHERE Date LIKE <STR>) GROUP BY ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1

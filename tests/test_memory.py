@@ -90,6 +90,61 @@ class TestMemoryManager(unittest.TestCase):
         result = manager.get_memory_context()
         self.assertIsInstance(result, str)
 
+    def test_consolidate_generates_all_3_layers(self) -> None:
+        """consolidate_to_topics() creates topics/, index.json, and session file."""
+        manager = self.MemoryManager(session_id="test-consolidate-001")
+
+        # Save a turn first (Layer 3)
+        manager.save_turn(self.MemoryTurn(
+            role="user",
+            content="Which NASDAQ stocks had highest trading volume in 2008?",
+            timestamp=self._ts(),
+            session_id="test-consolidate-001",
+        ))
+        manager.save_turn(self.MemoryTurn(
+            role="assistant",
+            content="AAPL, MSFT, GOOG had the highest volumes.",
+            timestamp=self._ts(),
+            session_id="test-consolidate-001",
+        ))
+
+        # Run consolidation
+        manager.consolidate_to_topics(
+            question="Which NASDAQ stocks had highest trading volume in 2008?",
+            answer="AAPL, MSFT, GOOG had the highest volumes.",
+            tool_calls=[{"tool_name": "query_sqlite", "success": True},
+                        {"tool_name": "query_duckdb", "success": True}],
+        )
+
+        # Layer 1: index.json must exist
+        index_path = os.path.join(self.tmpdir, "index.json")
+        self.assertTrue(os.path.exists(index_path), "index.json not created")
+
+        # Layer 2: topics/ directory must have files
+        topics_dir = os.path.join(self.tmpdir, "topics")
+        self.assertTrue(os.path.isdir(topics_dir), "topics/ dir not created")
+        topic_files = os.listdir(topics_dir)
+        self.assertGreater(len(topic_files), 0, "No topic files created")
+
+        # Layer 2: domain topic must contain the question
+        domain_file = os.path.join(topics_dir, "patterns_financial_markets.md")
+        self.assertTrue(os.path.exists(domain_file), "Domain topic file not created")
+        content = open(domain_file).read()
+        self.assertIn("NASDAQ", content)
+
+        # Layer 2: session summary must exist
+        summary_file = os.path.join(topics_dir, "session_summary.md")
+        self.assertTrue(os.path.exists(summary_file), "session_summary.md not created")
+
+        # Layer 1: index must reference both topics
+        index = json.loads(open(index_path).read())
+        self.assertIn("patterns_financial_markets", index)
+        self.assertIn("session_summary", index)
+
+        # Layer 5: get_memory_context must now include topics
+        ctx = manager.get_memory_context()
+        self.assertIn("Remembered Topics", ctx)
+
 
 if __name__ == "__main__":
     unittest.main()

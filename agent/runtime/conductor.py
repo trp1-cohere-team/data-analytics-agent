@@ -410,7 +410,7 @@ class OracleForgeConductor:
             "query_sqlite",
             (
                 'SELECT Symbol, "Company Description" FROM stockinfo '
-                'WHERE "Nasdaq Traded" = \'Y\' AND "Financial Status" IN (\'D\', \'E\')'
+                'WHERE "Nasdaq Traded" = \'Y\' AND "Financial Status" IN (\'D\', \'H\')'
             ),
         )
         if not sqlite_rows:
@@ -685,6 +685,13 @@ class OracleForgeConductor:
         ts = datetime.now(timezone.utc).isoformat()
         self._memory.save_turn(MemoryTurn(role="user", content=question, timestamp=ts, session_id=self._session_id))
         self._memory.save_turn(MemoryTurn(role="assistant", content=answer_text[:500], timestamp=ts, session_id=self._session_id))
+
+        # --- Consolidate session → topics + index (Layer 2 + 1) ---
+        self._memory.consolidate_to_topics(
+            question=question,
+            answer=answer_text,
+            tool_calls=self._tool_calls,
+        )
 
         self._emit(
             "session_end",

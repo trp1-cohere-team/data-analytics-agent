@@ -90,6 +90,24 @@ All 4 databases are accessed through the unified MCPClient interface:
 
 The DuckDB tool connects to a dedicated bridge server. All tools are read-only.
 
+## CRITICAL: Dataset-to-Database Routing
+
+**You MUST use the correct tool for each dataset. Using the wrong tool will always return no results.**
+
+| Domain / Dataset | Tool to use | Key tables |
+|-----------------|-------------|------------|
+| Stock prices, OHLCV, trading volume, Adj Close | `query_duckdb` | One table per ticker symbol (e.g. `AAPL`, `MSFT`) with columns: Date, Open, High, Low, Close, Adj Close, Volume |
+| Stock metadata (company names, exchange, ETF flag, financial status, market category) | `query_sqlite` | `stockinfo` — columns: Symbol, "Company Description", "Listing Exchange", ETF, "Financial Status", "Nasdaq Traded", "Market Category" |
+| Multi-step stock queries (metadata + prices) | `query_sqlite` first for symbols, then `query_duckdb` for price data | Join on Symbol ↔ table name |
+| PostgreSQL datasets (retail, CRM, etc.) | `query_postgresql` | Only use for non-stock DAB datasets |
+| MongoDB datasets | `query_mongodb` | Only use for document-store DAB datasets |
+
+### Quick routing rules
+- Question mentions NASDAQ, NYSE, stock, ETF, trading volume, closing price, intraday → **sqlite + duckdb**
+- Question about company names or exchange listings → **query_sqlite** (`stockinfo` table)
+- Question about price/volume numbers → **query_duckdb** (ticker-named tables)
+- Never query PostgreSQL for stock data — stock data does NOT live there
+
 ## Tool Scoping and Connection Declarations
 
 ### Why These Tools Are Scoped This Way

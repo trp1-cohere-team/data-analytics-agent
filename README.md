@@ -16,6 +16,12 @@ Answers natural-language data questions by routing queries across PostgreSQL, Mo
 
 Replace `YOUR_SHARED_SERVER_HOST` with your team's shared-server host/IP before final submission (public endpoint above is already live).
 
+## Dashboard Screenshot
+
+Current dashboard capture:
+
+![OracleForge Dashboard](screenshoot/dashboard.png)
+
 ---
 
 ## End-to-End Architecture

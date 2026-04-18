@@ -1405,3 +1405,1255 @@ LINE <NUM>: ... = <STR>) t1 JOIN (SELECT Symbol FROM stockinfo WHERE `Market Cat
    ...
 - **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
 - **Retry**: 1
+
+### Correction — 2026-04-16T20:59:22.671586+00:00
+- **Session**: f904555c-1653-4964-b119-ad8d0271287b
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT "Adj Close" FROM AAPL ORDER BY "Adj Close" DESC LIMIT <NUM>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T21:03:49.366200+00:00
+- **Session**: ebbb4065-4115-4210-88a1-852fe2c193fd
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT "Adj Close" FROM AAPL ORDER BY "Adj Close" DESC LIMIT <NUM>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T21:04:48.212057+00:00
+- **Session**: 7e4ad442-2f7f-4179-adbe-6494b2c640fd
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT "Adj Close" FROM AAPL ORDER BY "Adj Close" DESC LIMIT <NUM>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T21:04:57.048746+00:00
+- **Session**: 7e4ad442-2f7f-4179-adbe-6494b2c640fd
+- **Category**: db-type
+- **Error**: invalid_code_payload
+- **Fix**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 1
+
+### Correction — 2026-04-16T21:05:23.297795+00:00
+- **Session**: 58f64f4d-1540-4335-9e3e-6f402dfa2e03
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT "Adj Close" FROM AAPL ORDER BY "Adj Close" DESC LIMIT <NUM>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T22:24:59.808178+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: error processing request: unable to execute query: SQL logic error: no such table: duckdb_tables (<NUM>)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T22:39:33.722303+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: error processing request: unable to execute query: ERROR: relation "orders" does not exist (SQLSTATE 42P01)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T22:39:36.555110+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: error processing request: unable to execute query: ERROR: relation "crm_order" does not exist (SQLSTATE 42P01)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T22:39:39.367570+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: error processing request: unable to execute query: ERROR: operator does not exist: text * text (SQLSTATE <NUM>)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T22:39:40.798393+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: error processing request: unable to execute query: ERROR: column o.id does not exist (SQLSTATE <NUM>)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-16T22:39:42.671921+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: error processing request: unable to execute query: ERROR: column o.accountid does not exist (SQLSTATE <NUM>)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-16T22:39:48.392449+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: error processing request: unable to execute query: ERROR: relation "crm_order" does not exist (SQLSTATE 42P01)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T22:39:50.100340+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: error processing request: unable to execute query: ERROR: relation "crm_order" does not exist (SQLSTATE 42P01)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-16T22:39:51.544648+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: error processing request: unable to execute query: ERROR: relation "crm_account" does not exist (SQLSTATE 42P01)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-16T22:40:26.973675+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: error processing request: unable to execute query: ERROR: relation "crm_account" does not exist (SQLSTATE 42P01)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T22:40:32.380325+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: error processing request: unable to execute query: ERROR: relation "crm_account" does not exist (SQLSTATE 42P01)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T22:40:36.129382+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: error processing request: unable to execute query: ERROR: relation "crm_account" does not exist (SQLSTATE 42P01)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T22:40:38.554566+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: error processing request: unable to execute query: ERROR: relation "crm_account" does not exist (SQLSTATE 42P01)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-16T22:40:42.520419+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: error processing request: unable to execute query: ERROR: relation "crm_account" does not exist (SQLSTATE 42P01)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T22:40:45.216478+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: error processing request: unable to execute query: ERROR: relation "crm_account" does not exist (SQLSTATE 42P01)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-16T22:40:48.159493+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: error processing request: unable to execute query: ERROR: relation "crm_account" does not exist (SQLSTATE 42P01)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-16T22:40:52.379006+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: error processing request: unable to execute query: ERROR: relation "crm_account" does not exist (SQLSTATE 42P01)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T22:42:57.997853+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name MSFT does not exist!
+Did you mean "MS"?
+
+LINE <NUM>: SELECT MAX(Volume) FROM MSFT
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T22:42:59.264759+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name MSFT does not exist!
+Did you mean "MS"?
+
+LINE <NUM>: SELECT MAX(Volume) FROM "MSFT"
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-16T22:43:00.927437+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name MSFT does not exist!
+Did you mean "MS"?
+
+LINE <NUM>: SELECT MAX(Volume) FROM "MSFT"
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-16T22:43:07.875022+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name MSFT does not exist!
+Did you mean "MS"?
+
+LINE <NUM>: SELECT MAX(Volume) FROM MSFT
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T22:43:09.502545+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name MSFT does not exist!
+Did you mean "MS"?
+
+LINE <NUM>: SELECT MAX(Volume) FROM "MSFT"
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-16T22:43:10.663091+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name MSFT does not exist!
+Did you mean "MS"?
+
+LINE <NUM>: SELECT MAX(Volume) FROM "MSFT"
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-16T22:43:14.451161+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name MSFT does not exist!
+Did you mean "MS"?
+
+LINE <NUM>: SELECT MAX(Volume) FROM "MSFT"
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T22:43:16.066799+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name MSFT does not exist!
+Did you mean "MS"?
+
+LINE <NUM>: SELECT MAX(Volume) FROM "MSFT"
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-16T22:43:17.661863+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name MSFT does not exist!
+Did you mean "MS"?
+
+LINE <NUM>: SELECT MAX(Volume) FROM "MSFT"
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-16T22:45:22.814501+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: error processing request: unable to execute query: ERROR: relation "crm_user" does not exist (SQLSTATE 42P01)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T22:45:31.958872+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: error processing request: unable to execute query: ERROR: relation "crm_user" does not exist (SQLSTATE 42P01)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T22:45:33.393272+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: error processing request: unable to execute query: ERROR: relation "crm_order" does not exist (SQLSTATE 42P01)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-16T22:45:40.178337+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: error processing request: unable to execute query: ERROR: relation "crm_user" does not exist (SQLSTATE 42P01)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T22:45:43.276498+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: error processing request: unable to execute query: ERROR: relation "crm_user" does not exist (SQLSTATE 42P01)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-16T22:47:45.756573+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: {<STR>: -<NUM>, <STR>: <STR>}
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T22:49:36.129636+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name MSFT does not exist!
+Did you mean "MS"?
+
+LINE <NUM>: SELECT MAX(Volume) FROM "MSFT"
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T22:49:37.392072+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name MSFT does not exist!
+Did you mean "MS"?
+
+LINE <NUM>: SELECT MAX(Volume) FROM MSFT
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-16T22:49:39.548779+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name MSFT does not exist!
+Did you mean "MS"?
+
+LINE <NUM>: SELECT MAX(Volume) FROM "MSFT"
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-16T22:52:57.291105+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: {<STR>: -<NUM>, <STR>: <STR>}
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T22:53:02.079031+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: {<STR>: -<NUM>, <STR>: 'provided parameters were invalid: unable to parse value for "pipeline": [map["$group":map["_id":"$article_id" "num_authors":map["$sum":"<NUM>"]]] map["$sort":map["num_authors"...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T22:54:43.005016+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: {<STR>: -<NUM>, <STR>: <STR>}
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T22:55:11.729085+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: {<STR>: -<NUM>, <STR>: <STR>}
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-16T22:55:13.463949+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: {<STR>: -<NUM>, <STR>: <STR>}
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-16T23:04:06.037823+00:00
+- **Session**: a50d8881-c0e2-41f3-b18a-1a0955f4ffa8
+- **Category**: query
+- **Error**: {<STR>: -<NUM>, <STR>: <STR>}
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:00:45.907504+00:00
+- **Session**: 38335e56-5980-4c31-b3da-93509db62f69
+- **Category**: query
+- **Error**: error processing request: unable to execute query: SQL logic error: no such table: duckdb_tables (<NUM>)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:06:57.002205+00:00
+- **Session**: 38335e56-5980-4c31-b3da-93509db62f69
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name TSLA does not exist!
+Did you mean "TUSA"?
+
+LINE <NUM>: SELECT AVG(Volume) FROM TSLA WHERE Date LIKE <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:06:58.254525+00:00
+- **Session**: 38335e56-5980-4c31-b3da-93509db62f69
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name TSLA does not exist!
+Did you mean "TUSA"?
+
+LINE <NUM>: SELECT AVG(Volume) FROM "TSLA" WHERE Date LIKE <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-17T02:06:59.489970+00:00
+- **Session**: 38335e56-5980-4c31-b3da-93509db62f69
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name TSLA does not exist!
+Did you mean "TUSA"?
+
+LINE <NUM>: SELECT AVG(Volume) FROM "TSLA" WHERE Date LIKE <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-17T02:14:40.147215+00:00
+- **Session**: 38335e56-5980-4c31-b3da-93509db62f69
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT * FROM AAPL WHERE ticker = <STR>
+                      ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:14:41.361184+00:00
+- **Session**: 38335e56-5980-4c31-b3da-93509db62f69
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT * FROM AAPL
+                      ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-17T02:14:42.512698+00:00
+- **Session**: 38335e56-5980-4c31-b3da-93509db62f69
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT * FROM AAPL
+                      ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-17T02:14:46.570235+00:00
+- **Session**: 38335e56-5980-4c31-b3da-93509db62f69
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT * FROM AAPL
+                      ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:14:47.759787+00:00
+- **Session**: 38335e56-5980-4c31-b3da-93509db62f69
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT * FROM AAPL
+                      ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-17T02:14:48.990955+00:00
+- **Session**: 38335e56-5980-4c31-b3da-93509db62f69
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT * FROM AAPL
+                      ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-17T02:14:51.833249+00:00
+- **Session**: 38335e56-5980-4c31-b3da-93509db62f69
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT * FROM AAPL
+                      ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:15:26.575846+00:00
+- **Session**: 38335e56-5980-4c31-b3da-93509db62f69
+- **Category**: query
+- **Error**: error processing request: unable to execute query: SQL logic error: no such table: AAPL (<NUM>)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:16:08.641493+00:00
+- **Session**: 38335e56-5980-4c31-b3da-93509db62f69
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT "Adj Close" FROM AAPL WHERE Date = <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:16:09.863497+00:00
+- **Session**: 38335e56-5980-4c31-b3da-93509db62f69
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT "Adj Close" FROM AAPL WHERE Date = <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-17T02:16:13.497784+00:00
+- **Session**: 38335e56-5980-4c31-b3da-93509db62f69
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name BTC does not exist!
+Did you mean "BTEC"?
+
+LINE <NUM>: SELECT "Adj Close" FROM BTC WHERE Date = <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:16:38.338452+00:00
+- **Session**: 38335e56-5980-4c31-b3da-93509db62f69
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name BTC does not exist!
+Did you mean "BTEC"?
+
+LINE <NUM>: SELECT "Adj Close" FROM BTC WHERE Date = <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:16:39.857941+00:00
+- **Session**: 38335e56-5980-4c31-b3da-93509db62f69
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name BTC does not exist!
+Did you mean "BTEC"?
+
+LINE <NUM>: SELECT "Adj Close" FROM BTC WHERE Date = <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-17T02:16:41.432610+00:00
+- **Session**: 38335e56-5980-4c31-b3da-93509db62f69
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name BTC does not exist!
+Did you mean "BTEC"?
+
+LINE <NUM>: SELECT "Adj Close" FROM BTC WHERE Date = <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-17T02:16:44.697634+00:00
+- **Session**: 38335e56-5980-4c31-b3da-93509db62f69
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name GBTC does not exist!
+Did you mean "GT"?
+
+LINE <NUM>: SELECT "Adj Close" FROM GBTC WHERE Date = <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:17:31.309180+00:00
+- **Session**: 38335e56-5980-4c31-b3da-93509db62f69
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT "Adj Close" FROM AAPL WHERE Date = <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:17:32.695439+00:00
+- **Session**: 38335e56-5980-4c31-b3da-93509db62f69
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT "Adj Close" FROM "AAPL" WHERE Date = <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-17T02:17:33.994582+00:00
+- **Session**: 38335e56-5980-4c31-b3da-93509db62f69
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT "Adj Close" FROM "AAPL" WHERE Date = <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-17T02:17:42.764349+00:00
+- **Session**: 38335e56-5980-4c31-b3da-93509db62f69
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name BTC does not exist!
+Did you mean "BTEC"?
+
+LINE <NUM>: SELECT "Adj Close" FROM BTC WHERE Date = <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:21:49.629367+00:00
+- **Session**: 38335e56-5980-4c31-b3da-93509db62f69
+- **Category**: query
+- **Error**: query_error: Binder Error: Ambiguous reference to column name "table_name" (use: "tables.table_name" or "t2.table_name")
+
+LINE <NUM>: SELECT table_name, AVG(Volume) AS AverageVolume FROM information_s...
+...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:31:09.320706+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: db-type
+- **Error**: invalid_code_payload
+- **Fix**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:31:13.437621+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: db-type
+- **Error**: invalid_code_payload
+- **Fix**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:31:17.824354+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: db-type
+- **Error**: invalid_code_payload
+- **Fix**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 2
+
+### Correction — 2026-04-17T02:31:20.678507+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: db-type
+- **Error**: invalid_code_payload
+- **Fix**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 3
+
+### Correction — 2026-04-17T02:31:25.002899+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: error processing request: unable to execute query: SQL logic error: no such table: information_schema.tables (<NUM>)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:31:28.181602+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: db-type
+- **Error**: invalid_code_payload
+- **Fix**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 2
+
+### Correction — 2026-04-17T02:32:40.764726+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name TSLA does not exist!
+Did you mean "TUSA"?
+
+LINE <NUM>: SELECT AVG(Volume) FROM "TSLA" WHERE Date LIKE <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:32:41.999588+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name TSLA does not exist!
+Did you mean "TUSA"?
+
+LINE <NUM>: SELECT AVG(Volume) FROM TSLA WHERE Date LIKE <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-17T02:32:43.774268+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name TSLA does not exist!
+Did you mean "TUSA"?
+
+LINE <NUM>: SELECT AVG(Volume) FROM "TSLA" WHERE Date LIKE <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-17T02:32:48.921607+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name TSLA does not exist!
+Did you mean "TUSA"?
+
+LINE <NUM>: SELECT AVG(Volume) FROM TSLA WHERE Date LIKE <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:35:22.466899+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: query_error: Parser Error: syntax error at or near "Exchange"
+
+LINE <NUM>: ... IN (SELECT Symbol FROM stockinfo WHERE ETF = <STR> AND `Listing Exchange` = <STR>)
+                                              ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:35:43.432815+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: query_error: Parser Error: syntax error at or near "WHERE"
+
+LINE <NUM>: ... t(table_name) LEFT JOIN  READ_CSV_AUTO(table_name || <STR>)  WHERE Date LIKE <STR> GROUP BY table_name) WHERE max_adj_...
+   ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:35:45.297299+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name stockinfo does not exist!
+Did you mean "stockindex_trade"?
+
+LINE <NUM>: ... table_schema = <STR>) t1 INNER JOIN (SELECT symbol FROM stockinfo WHERE "Listing Ex...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-17T02:35:46.892200+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name stockinfo does not exist!
+Did you mean "stockindex_trade"?
+
+LINE <NUM>: ... information_schema.tables t1 INNER JOIN (SELECT Symbol FROM stockinfo WHERE "Listing...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-17T02:35:51.817533+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name stockinfo does not exist!
+Did you mean "stockindex_trade"?
+
+LINE <NUM>: ... information_schema.tables t1 INNER JOIN (SELECT Symbol FROM stockinfo WHERE "Listing...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:35:55.096871+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name stockinfo does not exist!
+Did you mean "stockindex_trade"?
+
+LINE <NUM>: ... information_schema.tables t1 INNER JOIN (SELECT Symbol FROM stockinfo WHERE "Listing...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:35:59.001323+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: {<STR>: -<NUM>, <STR>: <STR>}
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:36:34.042262+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: query_error: Parser Error: syntax error at or near "Exchange"
+
+LINE <NUM>: ...<STR>P<STR>Y') s ON t.table_name = s.Symbol...
+  ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:36:35.611669+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: query_error: Parser Error: syntax error at or near "Exchange"
+
+LINE <NUM>: ...<STR>P<STR>Y') s ON t.table_name = s.Symbol...
+  ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-17T02:36:37.709744+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: query_error: Parser Error: syntax error at or near "Exchange"
+
+LINE <NUM>: ...<STR>P<STR>Y') s ON t.table_name = s.Symbol...
+  ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-17T02:36:41.530209+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: query_error: Parser Error: syntax error at or near "Exchange"
+
+LINE <NUM>: ...<STR>P<STR>Y') s ON t.table_name = s.Symbol...
+  ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:36:43.071801+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: query_error: Parser Error: syntax error at or near "Exchange"
+
+LINE <NUM>: ...) t INNER JOIN (SELECT Symbol FROM stockinfo WHERE `Listing Exchange` = <STR> AND ETF = <STR>) s ON t.table_name = s.Symbol...
+   ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-17T02:36:44.851996+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name stockinfo does not exist!
+Did you mean "stockindex_trade"?
+
+LINE <NUM>: ... WHERE table_schema = <STR>) t INNER JOIN (SELECT Symbol FROM stockinfo WHERE "Listi...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-17T02:36:49.017715+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name stockinfo does not exist!
+Did you mean "stockindex_trade"?
+
+LINE <NUM>: ... WHERE table_schema = <STR>) t INNER JOIN (SELECT Symbol FROM stockinfo WHERE "Listi...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:36:50.494461+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name stockinfo does not exist!
+Did you mean "stockindex_trade"?
+
+LINE <NUM>: ... information_schema.tables t INNER JOIN (SELECT Symbol FROM stockinfo WHERE "Listing ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-17T02:37:00.331003+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: query_error: Binder Error: Table function "read_csv_auto" does not support lateral join column parameters - cannot use column "table_name" in this context.
+The function only supports literals as param...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:37:01.932272+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name stockinfo does not exist!
+Did you mean "stockindex_trade"?
+
+LINE <NUM>: ... WHERE table_schema = <STR>) t INNER JOIN (SELECT Symbol FROM stockinfo WHERE "Listi...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-17T02:37:05.445825+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: query_error: HTTP Error: HTTP GET error reading <STR> in region <STR> (HTTP <NUM> Forbidden)
+
+AccessDenied: Access Denied
+
+Authentication Failure - this is usually caused by inva...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-17T02:39:10.163446+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name GBTC does not exist!
+Did you mean "GT"?
+
+LINE <NUM>: SELECT "Adj Close" FROM GBTC WHERE Date = <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:39:11.798640+00:00
+- **Session**: cfc7ab01-4ef8-4285-8be0-b99ab2754ef7
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name BTC does not exist!
+Did you mean "BTEC"?
+
+LINE <NUM>: SELECT "Adj Close" FROM BTC WHERE Date = <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-17T02:46:23.604282+00:00
+- **Session**: 7d4ff267-3daa-4654-9006-dbc89ea49f7a
+- **Category**: query
+- **Error**: execution_error
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:46:26.392336+00:00
+- **Session**: 7d4ff267-3daa-4654-9006-dbc89ea49f7a
+- **Category**: db-type
+- **Error**: invalid_code_payload
+- **Fix**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 2
+
+### Correction — 2026-04-17T02:46:29.347877+00:00
+- **Session**: 7d4ff267-3daa-4654-9006-dbc89ea49f7a
+- **Category**: db-type
+- **Error**: invalid_code_payload
+- **Fix**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 3
+
+### Correction — 2026-04-17T02:46:35.836148+00:00
+- **Session**: 7d4ff267-3daa-4654-9006-dbc89ea49f7a
+- **Category**: query
+- **Error**: execution_error
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:46:37.450514+00:00
+- **Session**: 7d4ff267-3daa-4654-9006-dbc89ea49f7a
+- **Category**: query
+- **Error**: error processing request: unable to execute query: SQL logic error: no such table: information_schema.tables (<NUM>)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-17T02:46:40.827555+00:00
+- **Session**: 7d4ff267-3daa-4654-9006-dbc89ea49f7a
+- **Category**: db-type
+- **Error**: invalid_code_payload
+- **Fix**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 3
+
+### Correction — 2026-04-17T02:46:46.363148+00:00
+- **Session**: 7d4ff267-3daa-4654-9006-dbc89ea49f7a
+- **Category**: db-type
+- **Error**: invalid_code_payload
+- **Fix**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:48:24.528918+00:00
+- **Session**: 7d4ff267-3daa-4654-9006-dbc89ea49f7a
+- **Category**: query
+- **Error**: execution_error
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:48:27.231794+00:00
+- **Session**: 7d4ff267-3daa-4654-9006-dbc89ea49f7a
+- **Category**: db-type
+- **Error**: invalid_code_payload
+- **Fix**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 2
+
+### Correction — 2026-04-17T02:48:30.420065+00:00
+- **Session**: 7d4ff267-3daa-4654-9006-dbc89ea49f7a
+- **Category**: query
+- **Error**: execution_error
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-17T02:48:33.159944+00:00
+- **Session**: 7d4ff267-3daa-4654-9006-dbc89ea49f7a
+- **Category**: db-type
+- **Error**: invalid_code_payload
+- **Fix**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:48:35.651661+00:00
+- **Session**: 7d4ff267-3daa-4654-9006-dbc89ea49f7a
+- **Category**: db-type
+- **Error**: invalid_code_payload
+- **Fix**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 2
+
+### Correction — 2026-04-17T02:48:37.178604+00:00
+- **Session**: 7d4ff267-3daa-4654-9006-dbc89ea49f7a
+- **Category**: query
+- **Error**: execution_error
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-17T02:49:33.189712+00:00
+- **Session**: 7d4ff267-3daa-4654-9006-dbc89ea49f7a
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name TSLA does not exist!
+Did you mean "TUSA"?
+
+LINE <NUM>: SELECT AVG(Volume) FROM "TSLA" WHERE Date LIKE <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:49:34.338924+00:00
+- **Session**: 7d4ff267-3daa-4654-9006-dbc89ea49f7a
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name TSLA does not exist!
+Did you mean "TUSA"?
+
+LINE <NUM>: SELECT AVG(Volume) FROM TSLA WHERE Date LIKE <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-17T02:49:36.163175+00:00
+- **Session**: 7d4ff267-3daa-4654-9006-dbc89ea49f7a
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name TSLA does not exist!
+Did you mean "TUSA"?
+
+LINE <NUM>: SELECT AVG(Volume) FROM TSLA WHERE Date LIKE <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-17T02:49:38.807607+00:00
+- **Session**: 7d4ff267-3daa-4654-9006-dbc89ea49f7a
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name TSLA does not exist!
+Did you mean "TUSA"?
+
+LINE <NUM>: SELECT AVG(Volume) FROM TSLA WHERE Date LIKE <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:49:40.521737+00:00
+- **Session**: 7d4ff267-3daa-4654-9006-dbc89ea49f7a
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name TSLA does not exist!
+Did you mean "TUSA"?
+
+LINE <NUM>: SELECT AVG(Volume) FROM "TSLA" WHERE Date LIKE <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-17T02:49:41.690324+00:00
+- **Session**: 7d4ff267-3daa-4654-9006-dbc89ea49f7a
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name TSLA does not exist!
+Did you mean "TUSA"?
+
+LINE <NUM>: SELECT AVG(Volume) FROM TSLA WHERE Date LIKE <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-17T02:53:50.445204+00:00
+- **Session**: 9a76988b-b02f-4762-8051-66ff63521094
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT "Adj Close" FROM AAPL WHERE Date = <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:53:51.831456+00:00
+- **Session**: 9a76988b-b02f-4762-8051-66ff63521094
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT "Adj Close" FROM "AAPL" WHERE Date = <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-17T02:53:53.633548+00:00
+- **Session**: 9a76988b-b02f-4762-8051-66ff63521094
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT "Adj Close" FROM "AAPL" WHERE Date = <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-17T02:54:13.737698+00:00
+- **Session**: 9a76988b-b02f-4762-8051-66ff63521094
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT "Adj Close" FROM AAPL WHERE Date = <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T02:54:14.984766+00:00
+- **Session**: 9a76988b-b02f-4762-8051-66ff63521094
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT "Adj Close" FROM "AAPL" WHERE Date = <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-17T02:54:16.257693+00:00
+- **Session**: 9a76988b-b02f-4762-8051-66ff63521094
+- **Category**: query
+- **Error**: query_error: Catalog Error: Table with name AAPL does not exist!
+Did you mean "ADAP"?
+
+LINE <NUM>: SELECT "Adj Close" FROM "AAPL" WHERE Date = <STR>
+                                ^
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-17T03:06:32.163019+00:00
+- **Session**: 810ebb32-76d1-4c3d-87f7-591eca831f8c
+- **Category**: query
+- **Error**: query_error: Parser Error: syntax error at or near "WHERE"
+
+LINE <NUM>: ....tables t1 INNER JOIN READ_CSV_AUTO(table_name || <STR>)  WHERE table_schema = <STR>) GROUP BY Symbol ORDER BY Total...
+       ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T03:06:38.213588+00:00
+- **Session**: 810ebb32-76d1-4c3d-87f7-591eca831f8c
+- **Category**: query
+- **Error**: query_error: IO Error: No files found that match the pattern "AAAU.csv"
+
+LINE <NUM>: ... table_name, AVG(Volume) AS AverageVolume FROM (SELECT * FROM READ_CSV_AUTO(<STR>)) GROUP BY table_name
+       ...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T03:06:39.678418+00:00
+- **Session**: 810ebb32-76d1-4c3d-87f7-591eca831f8c
+- **Category**: query
+- **Error**: query_error: IO Error: No files found that match the pattern "table_name.csv"
+
+LINE <NUM>: ... table_name, AVG(Volume) AS AverageVolume FROM (SELECT * FROM READ_CSV_AUTO(table_name || <STR>)) GROUP BY ta...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-17T03:06:41.281835+00:00
+- **Session**: 810ebb32-76d1-4c3d-87f7-591eca831f8c
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "table_name" not found in FROM clause!
+Candidate bindings: "Date", "Open", "Close"
+
+LINE <NUM>: ...(Volume) AS AverageVolume FROM (SELECT * FROM AAAU) GROUP BY...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-17T03:06:44.116975+00:00
+- **Session**: 810ebb32-76d1-4c3d-87f7-591eca831f8c
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "table_name" not found in FROM clause!
+Candidate bindings: "Date", "Open", "Close"
+
+LINE <NUM>: ..., MAX(Volume) AS MaxVolume FROM (SELECT * FROM AAAU) GROUP B...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T03:06:45.196695+00:00
+- **Session**: 810ebb32-76d1-4c3d-87f7-591eca831f8c
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "table_name" not found in FROM clause!
+Candidate bindings: "Date", "Open", "Close"
+
+LINE <NUM>: SELECT table_name, MAX(Volume) AS MaxVolume FROM (SELECT * FROM...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-17T03:06:46.565262+00:00
+- **Session**: 810ebb32-76d1-4c3d-87f7-591eca831f8c
+- **Category**: query
+- **Error**: query_error: Binder Error: Referenced column "table_name" not found in FROM clause!
+Candidate bindings: "Date", "Open", "Close"
+
+LINE <NUM>: SELECT table_name, MAX(Volume) AS MaxVolume FROM (SELECT * FROM...
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3
+
+### Correction — 2026-04-17T20:34:57.327063+00:00
+- **Session**: 921e347f-7f1f-4886-a7d6-a1261a249c3b
+- **Category**: query
+- **Error**: error processing request: unable to execute query: SQL logic error: no such table: duckdb_tables (<NUM>)
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T22:57:37.139112+00:00
+- **Session**: 6c510c5f-6a61-42af-8abe-9d1b5ae29d07
+- **Category**: query
+- **Error**: {<STR>: -<NUM>, <STR>: <STR>}
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T22:58:06.145744+00:00
+- **Session**: 6c510c5f-6a61-42af-8abe-9d1b5ae29d07
+- **Category**: query
+- **Error**: {<STR>: -<NUM>, <STR>: <STR>}
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 1
+
+### Correction — 2026-04-17T22:58:24.297940+00:00
+- **Session**: 6c510c5f-6a61-42af-8abe-9d1b5ae29d07
+- **Category**: query
+- **Error**: {<STR>: -<NUM>, <STR>: <STR>}
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 2
+
+### Correction — 2026-04-17T22:58:39.208237+00:00
+- **Session**: 6c510c5f-6a61-42af-8abe-9d1b5ae29d07
+- **Category**: query
+- **Error**: {<STR>: -<NUM>, <STR>: <STR>}
+- **Fix**: Review and rewrite the query with correct syntax, table names, and column names.
+- **Retry**: 3

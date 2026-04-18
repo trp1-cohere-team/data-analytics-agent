@@ -90,6 +90,19 @@ All 4 databases are accessed through the unified MCPClient interface:
 
 The DuckDB tool connects to a dedicated bridge server. All tools are read-only.
 
+## CRITICAL: Schema Anti-Patterns — Read Before Every Query
+
+| Anti-pattern | What to do instead |
+|---|---|
+| `SELECT ... FROM stock_prices` | **WRONG** — there is no `stock_prices` table. Use one table per ticker: `SELECT ... FROM AAPL` |
+| `SELECT ticker, ... GROUP BY ticker` | **WRONG** — `ticker` is not a column. The symbol IS the table name. Use `SELECT AVG(Volume) FROM AAPL` |
+| `SELECT ... FROM AAPL WHERE ETF = 'Y'` | **WRONG** — DuckDB tables have no `ETF` column. Filter ETF flag in SQLite `stockinfo` first |
+| `JOIN stockinfo TO duckdb_table ON Symbol` | **WRONG** — cross-connection SQL JOIN not possible. Do two separate queries: SQLite then DuckDB |
+| Price computation against only SQLite | **WRONG** — SQLite has no price data. Route price/OHLCV queries to DuckDB |
+| Query about `artists`, `books`, or other non-stock entities | **Answer defensively** — this dataset contains only financial market data |
+
+---
+
 ## CRITICAL: Dataset-to-Database Routing
 
 **You MUST use the correct tool for each dataset. Using the wrong tool will always return no results.**
@@ -107,6 +120,10 @@ The DuckDB tool connects to a dedicated bridge server. All tools are read-only.
 - Question about company names or exchange listings → **query_sqlite** (`stockinfo` table)
 - Question about price/volume numbers → **query_duckdb** (ticker-named tables)
 - Never query PostgreSQL for stock data — stock data does NOT live there
+- **Identifier quoting**: spaced column names must always be double-quoted: `"Adj Close"`, `"Listing Exchange"`, `"Financial Status"`, `"Market Category"`, `"Company Description"`, `"Nasdaq Traded"`
+- **Exchange codes in SQLite**: NYSE Arca → `'P'`, NYSE → `'N'`, NASDAQ → use `"Nasdaq Traded" = 'Y'` + `"Market Category"`
+- **Financial Status codes**: `'D'` = deficient, `'H'` = delinquent; `NULL` means status unknown — handle defensively
+- **Table existence guard**: before a batch DuckDB query, check `information_schema.tables` and filter symbols to only those that exist
 
 ## Tool Scoping and Connection Declarations
 
@@ -169,6 +186,68 @@ Every `AgentResult` must include:
 
 When confidence is below 0.3, the answer must include a caveat such as:
 "Note: This answer is based on limited evidence and may not be fully accurate."
+
+### Answer Sanitization — MUST follow
+
+The `answer` field is shown verbatim to the user. It MUST be a clean,
+natural-language reply.
+
+- **Never** paste raw Python lists, dicts, or JSON (`[{'Symbol': 'AAPL'}, …]`)
+  into the answer. Convert to plain English or a short Markdown table.
+- **Never** describe your own tool calls, retries, or reasoning steps
+  ("The previous tool call returned…", "I will start by…", "This query is
+  not valid because…"). That is internal state, not user-facing content.
+- **Never** echo the user's question back as the answer.
+- **Never** expose tool names, SQL, or `information_schema` references in the
+  prose answer. (SQL belongs in `tool_calls`, not in `answer`.)
+- If the retrieved data is empty or does not address the question, say so
+  in a single sentence rather than dumping raw output.
+
+### Clarification over Guessing
+
+When a question is ambiguous (e.g. "show me the best stock", "top company"),
+do NOT pick an arbitrary metric and run queries. Ask ONE focused clarifying
+question instead.
+
+**Echo the user's own wording.** If they said "better", your reply should
+use "better"; if they said "top" or "strongest", use that. Do not silently
+rephrase their word choice.
+
+Example shape (do NOT copy verbatim — adapt to the user's wording and the
+available data):
+
+> *User:* "Show me the top stock."
+> *You:*  "Top by what measure — highest return, largest trading volume,
+>          lowest volatility? And over what period?"
+
+Prefer one focused follow-up question over a speculative multi-tool plan.
+
+### Missing Table vs Missing Data — distinguish them
+
+When a DuckDB query fails because the table does not exist
+(`Table with name X does not exist`), the answer MUST say the **symbol is
+not in the dataset**, not "no data for [year]". These are different facts:
+
+- ❌ "There is no trading volume data available for TSLA in 2019 in DuckDB."
+  (implies TSLA exists but 2019 is empty)
+- ✅ "TSLA is not in the DuckDB dataset — no ticker table exists for it."
+
+Before giving a "no data" answer for a specific ticker, verify the table
+exists via `SELECT table_name FROM information_schema.tables WHERE
+table_schema = 'main' AND table_name = '<SYMBOL>'`. If the table is
+missing, say so explicitly and suggest nearby tickers.
+
+### Large Result Sets
+
+When the query produces more than ~25 rows, do NOT write "X, Y, Z, and 2749
+others". That phrasing hides the result size and buries the count. Prefer:
+
+> "2,752 NASDAQ-traded symbols also have DuckDB price tables. First 10:
+>  AAAU, AADR, AAME, AAWW, AAXJ, ABEQ, ABMD, ACAD, ACES, ACIO."
+
+Lead with the total count, then show ~10 representative examples. If the
+user clearly asked for the full list, render it as a Markdown table or a
+line-per-row block instead of an inline comma list.
 
 ---
 

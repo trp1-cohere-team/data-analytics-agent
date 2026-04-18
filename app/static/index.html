@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1f6feb" />
+    <title>OracleForge Data Agent</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github.min.css"
+    />
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="history-drawer" id="historyDrawer" aria-hidden="true">
+        <div class="drawer-header">
+          <div>
+            <p class="eyebrow">Sessions</p>
+            <h2>History</h2>
+          </div>
+          <button class="ghost-button icon-button" id="closeHistoryButton" type="button" aria-label="Close history">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="history-list" id="historyList"></div>
+      </aside>
+
+      <div class="drawer-backdrop" id="drawerBackdrop"></div>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div class="brand">
+            <div class="brand-mark" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <rect x="1" y="1" width="8" height="8" rx="2" fill="white" opacity="0.95"/>
+                <rect x="11" y="1" width="8" height="8" rx="2" fill="white" opacity="0.6"/>
+                <rect x="1" y="11" width="8" height="8" rx="2" fill="white" opacity="0.6"/>
+                <rect x="11" y="11" width="8" height="8" rx="2" fill="white" opacity="0.32"/>
+              </svg>
+            </div>
+            <div>
+              <p class="eyebrow">Analytics Workspace</p>
+              <h1>OracleForge</h1>
+            </div>
+          </div>
+
+          <div class="topbar-actions">
+            <div class="status-pill" id="statusPill">
+              <span class="status-dot"></span>
+              <span id="statusText">Checking API</span>
+            </div>
+            <button class="ghost-button" id="clearChatButton" type="button">New chat</button>
+            <button class="ghost-button" id="historyButton" type="button">History</button>
+          </div>
+        </header>
+
+        <nav class="mobile-tabs" id="mobileTabs">
+          <button class="mobile-tab active" data-panel="chat" type="button">Chat</button>
+          <button class="mobile-tab" data-panel="details" type="button">Inspector</button>
+        </nav>
+
+        <section class="dashboard">
+          <div class="chat-column" id="chatColumn">
+            <section class="panel chat-panel">
+              <div class="panel-header">
+                <div class="panel-title-wrap">
+                  <h2>Ask the agent</h2>
+                  <p class="panel-subtitle">Query market data, trace tool usage, and inspect how each answer was reached.</p>
+                </div>
+                <div class="hint-group" id="hintGroup">
+                  <label><input type="checkbox" value="sqlite" checked /> sqlite</label>
+                  <label><input type="checkbox" value="duckdb" checked /> duckdb</label>
+                  <label><input type="checkbox" value="postgresql" /> postgresql</label>
+                  <label><input type="checkbox" value="mongodb" /> mongodb</label>
+                </div>
+              </div>
+
+              <div class="message-list" id="messageList" role="log" aria-live="polite"></div>
+
+              <div class="suggestion-row" id="suggestionRow">
+                <button class="suggestion-chip" type="button">What is the highest Adj Close for AAXJ?</button>
+                <button class="suggestion-chip" type="button">Which NASDAQ symbols in SQLite also have DuckDB price tables?</button>
+                <button class="suggestion-chip" type="button">Which companies in stockinfo are ETFs? Return 10 symbols.</button>
+              </div>
+
+              <div class="composer">
+                <div class="composer-shell">
+                  <textarea
+                    id="questionInput"
+                    rows="1"
+                    maxlength="4096"
+                    placeholder="Ask about stocks, DAB datasets, or anything in your data stack…"
+                  ></textarea>
+                  <div class="composer-meta">
+                    <div class="hint-summary" id="hintSummary"></div>
+                    <div class="composer-actions">
+                      <span class="char-count" id="charCount">0 / 4096</span>
+                      <button class="send-button" id="sendButton" type="button">
+                        <span class="send-label">Send</span>
+                        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+                          <path d="M1.5 11.5L11.5 1.5M11.5 1.5H7M11.5 1.5V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <aside class="details-column" id="detailsColumn">
+            <section class="panel details-panel">
+              <div class="panel-header">
+                <div>
+                  <h2>Inspector</h2>
+                  <p class="panel-subtitle">Confidence &amp; tool trace</p>
+                </div>
+              </div>
+
+              <div class="details-body">
+                <div class="details-empty" id="detailsEmpty">
+                  <div class="empty-icon" aria-hidden="true">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                      <circle cx="16" cy="16" r="13" stroke="currentColor" stroke-width="1.5"/>
+                      <path d="M16 10v7M16 20.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <p>Select an agent reply to inspect confidence, trace data, and tool activity.</p>
+                </div>
+
+                <div class="details-content hidden" id="detailsContent">
+                  <div class="metric-card confidence-card">
+                    <div class="metric-row">
+                      <span class="metric-label-inline">Confidence</span>
+                      <strong id="confidenceValue" class="confidence-pct">—</strong>
+                    </div>
+                    <div class="confidence-bar">
+                      <div id="confidenceBarFill"></div>
+                    </div>
+                  </div>
+
+                  <div class="detail-grid">
+                    <div class="metric-card">
+                      <span class="metric-label">Trace ID</span>
+                      <button class="copy-chip" id="traceIdButton" type="button"></button>
+                    </div>
+                    <div class="metric-card">
+                      <span class="metric-label">Failures</span>
+                      <span class="failure-badge" id="failureBadge">0</span>
+                    </div>
+                  </div>
+
+                  <div class="metric-card">
+                    <span class="metric-label">Timestamp</span>
+                    <strong id="detailTimestamp">—</strong>
+                  </div>
+
+                  <div class="timeline-block">
+                    <div class="timeline-header metric-row">
+                      <span class="metric-label-inline">Tool calls</span>
+                      <span class="tool-count-chip" id="toolCallCount">0</span>
+                    </div>
+                    <div class="tool-timeline" id="toolTimeline"></div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </aside>
+        </section>
+      </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

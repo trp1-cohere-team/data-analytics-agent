@@ -192,11 +192,50 @@ class MemoryManager:
             "unable to determine", "not found", "does not exist",
             "tool calls failed", "i am unable", "cannot answer",
             "no such table", "failed because", "i cannot",
+            "not in the duckdb dataset", "is not in the dataset",
+            "nearby tickers", "please rephrase",
+            "cryptocurrency data is not available", "outside the scope",
+            "weather data is not", "i'm a data analyst",
         )
+
+        def _is_clarification(text: str) -> bool:
+            """Answers containing '?' and < 200 chars are clarifying questions,
+            not settled knowledge — don't persist them as patterns."""
+            stripped = (text or "").strip()
+            return "?" in stripped and len(stripped) < 200
+
+        def _is_raw_dump(text: str) -> bool:
+            """Reject answers that are mostly raw list/dict output."""
+            s = (text or "").strip()
+            if not s:
+                return True
+            bracket_chars = sum(1 for c in s if c in "[]{},")
+            return bracket_chars > len(s) * 0.08 and (s.startswith("[") or s.startswith("{"))
+
+        def _is_echo(q: str, a: str) -> bool:
+            """Reject answers that just echo the question."""
+            nq = (q or "").strip().lower().rstrip("?.!")
+            na = (a or "").strip().lower().rstrip("?.!")
+            return bool(nq) and nq == na
+
+        def _is_trivial_question(q: str) -> bool:
+            """Filter out ack/followup/bare-fragment questions — they have no
+            standalone pattern value even if the answer is fine."""
+            s = (q or "").strip()
+            if not s or len(s) < 8:
+                return True
+            if len(s.split()) <= 2:
+                return True
+            return False
+
         is_successful = (
             bool(answer)
             and not any(p in answer.lower() for p in _failure_phrases)
             and any(tc.get("success") for tc in tool_calls)
+            and not _is_clarification(answer)
+            and not _is_raw_dump(answer)
+            and not _is_echo(question, answer)
+            and not _is_trivial_question(question)
         )
         db_types = list({
             tc.get("tool_name", "").replace("query_", "")

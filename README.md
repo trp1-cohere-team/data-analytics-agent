@@ -1,273 +1,207 @@
-# Oracle Forge Data Analytics Agent
+# OracleForge Data Analytics Agent
 
-Baseline implementation for TRP1 Week 8-9 challenge deliverables.
+Production-grade multi-database analytics agent for the TRP1 Oracle Forge challenge.  
+Answers natural-language data questions by routing queries across PostgreSQL, MongoDB, SQLite, and DuckDB through a unified MCP tool interface.
 
-## Team Members and Roles
+## Team Roster and Roles
 - Drivers: Nurye, Kemerya
 - Intelligence Officers: Amare, Ephrata
 - Signal Corps: Yohanis, Addisu
 
-## Ownership Split
-- Nurye (Driver): Agent runtime quality, routing and self-correction fixes, technical sign-off for gates.
-- Kemerya (Driver): Shared server reliability, benchmark run operations, final submission packaging checks.
-- Amare (Intelligence Officer): KB architecture/evaluation updates, probe failure taxonomy, weekly ecosystem brief.
-- Ephrata (Intelligence Officer): KB domain/corrections updates, injection-test evidence, failure-to-fix loop with Drivers.
-- Yohanis (Signal Corps): Daily internal update posts, X thread drafting and scheduling, technical milestone communication.
-- Addisu (Signal Corps): Community participation log, long-form article publishing, final engagement portfolio and metrics.
+## Live Agent Access (Shared Server)
+- Public live endpoint: `https://oracle-forge-sandbox.yohannesdereje1221.workers.dev/`
+- Shared-server health endpoint: `http://YOUR_SHARED_SERVER_HOST:8080/health`
+- Query endpoint (CLI over SSH on shared host):
+  - `python3 -m agent.data_agent.cli "What was the maximum adjusted closing price in 2020 for The RealReal, Inc.?" --db-hints '["sqlite","duckdb"]'`
 
-## What is implemented now
-- A DAB-style agent entrypoint at `agent.data_agent.dab_interface.run_agent`.
-- Claude Code-style runtime architecture under `agent/runtime/`:
-  - `conductor.py`: orchestrates planning, tool execution, synthesis.
-  - `worker.py`: executes planned per-database query steps.
-  - `tooling.py`: explicit tool registry and policy boundaries.
-  - `events.py`: durable append-only execution event log.
-  - `memory.py`: explicit index/topic/session memory hierarchy.
-- OpenAI-style 6-layer context pipeline:
-  - Layer 1: table usage (connected DBs + schema inventory + join-key hints).
-  - Layer 2: human annotations (question-aware retrieval from `kb/domain`).
-  - Layer 3: codex enrichment (question-aware code retrieval from agent/runtime/utils files).
-  - Layer 4: institutional knowledge (`agent/AGENT.md` + `kb/architecture` + `kb/evaluation`).
-  - Layer 5: interaction memory (session memory + corrections log).
-  - Layer 6: runtime context (routes, selected DBs, discovered tools, execution mode).
-- Automatic memory learnings extraction + topic distillation to keep long-running sessions useful.
-- OpenRouter integration with safe local fallback and trace output.
-- Multi-trial evaluation runner (`eval/run_trials.py`) and scorer (`eval/score_results.py`).
-- Starter Knowledge Base, planning docs, probe library, MCP tools config template.
-- Utility modules and tests for join-key normalization and scoring.
+Replace `YOUR_SHARED_SERVER_HOST` with your team's shared-server host/IP before final submission (public endpoint above is already live).
 
-## Quick start
+## Dashboard Screenshot
+
+Current dashboard capture:
+
+![OracleForge Dashboard](screenshoot/dashboard.png)
+
+---
+
+## End-to-End Architecture
+
+```mermaid
+flowchart TD
+    U(["👤 User / Facilitator\nNatural-language question + db-hints"])
+
+    subgraph ENTRY["Entry Points"]
+        CLI["🖥️ CLI\nagent/data_agent/cli.py"]
+        DAB["📊 DAB Interface\nagent/data_agent/dab_interface.py\nrun_agent(question, dbs, schema_info)"]
+    end
+
+    subgraph FACADE["Public Facade"]
+        OFA["🔮 OracleForge Agent\nagent/data_agent/oracle_forge_agent.py\n• Validates input & resolves db-hints\n• Assigns trace_id\n• Returns AgentResult"]
+    end
+
+    subgraph RUNTIME["Runtime Orchestration — agent/runtime/conductor.py"]
+        CTX["📋 6-Layer Context Assembly\nL6 User question\nL5 Session memory\nL4 Runtime context\nL3 Institutional KB\nL2 Domain hints\nL1 Schema & tables"]
+        PLAN["🗺️ Execution Planner\nagent/data_agent/execution_planner.py\nMulti-step plan · self-correction retries"]
+        MEM["🧠 Memory Manager\nagent/runtime/memory.py\n3-layer file store · 12-turn sessions"]
+        KB["📚 Knowledge Base\nagent/data_agent/knowledge_base.py\nkb/architecture · kb/domain\nkb/evaluation · kb/corrections"]
+        SYNTH["⚗️ Result Synthesizer\nagent/data_agent/result_synthesizer.py\nMerge evidence · confidence score 0–1"]
+        EVT["📝 Event Ledger\nagent/runtime/events.py\n.oracle_forge_memory/events.jsonl"]
+    end
+
+    subgraph TOOLS["Tool Layer — read-only  •  agent/data_agent/tooling.py + ToolPolicy"]
+        MCP["🔧 MCP Toolbox Client\nagent/data_agent/mcp_toolbox_client.py\nHTTP → :5000"]
+        DDB["🦆 DuckDB Bridge Client\nagent/data_agent/duckdb_bridge_client.py\nHTTP → :5001"]
+        SBX["📦 Sandbox Client\nagent/data_agent/sandbox_client.py\nHTTP → :8080  (AGENT_USE_SANDBOX=1)"]
+    end
+
+    subgraph DOCKER["Docker Infrastructure — docker-compose.yml"]
+        TOOLBOX["⚙️ Google MCP Toolbox\noracle_forge_mcp_toolbox\n:5000"]
+        BRIDGE["🌉 DuckDB Bridge Server\nsandbox/local_db_server.py\noracle_forge_duckdb_bridge\n:5001"]
+        SANDBOX["🏖️ Sandbox Server\nsandbox/sandbox_server.py\noracle_forge_sandbox\n:8080"]
+    end
+
+    subgraph DBS["Databases"]
+        PG[("🐘 PostgreSQL\noracle_forge_postgres\n:5432\nDAB retail & CRM datasets")]
+        MONGO[("🍃 MongoDB\noracle_forge_mongo\n:27017\nDAB document datasets")]
+        SQLITE[("📁 SQLite\ndata/sqlite/main.db\nStock metadata · stockinfo table")]
+        DUCKDB[("🦆 DuckDB\ndata/duckdb/main.duckdb\nStock OHLCV · one table per ticker")]
+    end
+
+    subgraph EVAL["Evaluation"]
+        HARNESS["📐 Eval Harness\neval/run_dab_benchmark.py\neval/run_trials.py"]
+        RESULTS["📈 Results\nresults/dab_detailed.json\nresults/dab_submission.json"]
+        SCRIPTS["🔄 Data Loading\nscripts/load_dab_datasets.py\nscripts/load_postgres_mongo.py\nscripts/load_remaining.py"]
+    end
+
+    U --> CLI
+    U --> DAB
+    CLI --> OFA
+    DAB --> OFA
+
+    OFA --> CTX
+    CTX --> MEM
+    CTX --> KB
+    CTX --> PLAN
+    PLAN --> TOOLS
+    PLAN --> SYNTH
+    SYNTH --> EVT
+    SYNTH --> OFA
+
+    MCP --> TOOLBOX
+    DDB --> BRIDGE
+    SBX --> SANDBOX
+
+    TOOLBOX --> PG
+    TOOLBOX --> MONGO
+    TOOLBOX --> SQLITE
+    BRIDGE --> DUCKDB
+
+    HARNESS --> OFA
+    HARNESS --> RESULTS
+    SCRIPTS --> PG
+    SCRIPTS --> MONGO
+    SCRIPTS --> SQLITE
+    SCRIPTS --> DUCKDB
+
+    style ENTRY fill:#e8f4f8,stroke:#2196F3
+    style FACADE fill:#e8f5e9,stroke:#4CAF50
+    style RUNTIME fill:#fff3e0,stroke:#FF9800
+    style TOOLS fill:#f3e5f5,stroke:#9C27B0
+    style DOCKER fill:#fce4ec,stroke:#E91E63
+    style DBS fill:#e0f2f1,stroke:#009688
+    style EVAL fill:#f5f5f5,stroke:#607D8B
+```
+
+### Database Routing
+
+| Question Domain | Tool | Database | Key Tables |
+|----------------|------|----------|-----------|
+| Stock prices, OHLCV, volume, Adj Close | `query_duckdb` | DuckDB | One table per ticker (e.g. `AAPL`, `MSFT`) |
+| Stock metadata, company names, exchange | `query_sqlite` | SQLite | `stockinfo` |
+| Retail, CRM, and other DAB datasets | `query_postgresql` | PostgreSQL | DAB-loaded tables |
+| Document-store DAB datasets | `query_mongodb` | MongoDB | DAB collections |
+
+### Operational Modes
+
+| Env Var | Effect |
+|---------|--------|
+| `AGENT_USE_MCP=1` | Use live MCP tools (default) |
+| `AGENT_USE_SANDBOX=1` | Route code execution through sandbox server |
+| `AGENT_OFFLINE_MODE=1` | Stub LLM — no API calls, deterministic output |
+
+---
+
+## Architecture (Component Map)
+- Public facade: `agent/data_agent/oracle_forge_agent.py`
+- Runtime orchestration: `agent/runtime/conductor.py`
+- Unified DB client: `agent/data_agent/mcp_toolbox_client.py`
+- DuckDB bridge client: `agent/data_agent/duckdb_bridge_client.py`
+- Context layering + KB retrieval: `agent/data_agent/context_layering.py`, `agent/data_agent/knowledge_base.py`
+- Execution planning + failure diagnostics: `agent/data_agent/execution_planner.py`, `agent/data_agent/failure_diagnostics.py`
+- Result synthesis: `agent/data_agent/result_synthesizer.py`
+- Memory + event ledger: `agent/runtime/memory.py`, `agent/runtime/events.py`
+- Optional sandbox execution path: `agent/data_agent/sandbox_client.py`, `sandbox/sandbox_server.py`
+- DuckDB bridge server: `sandbox/local_db_server.py`
+- Data loading scripts: `scripts/load_dab_datasets.py`, `scripts/load_postgres_mongo.py`, `scripts/load_remaining.py`
+
+## Clean-Machine Setup (Facilitator Runbook)
+1. Clone the repository.
+```bash
+git clone <repo-url>
+cd data-analytics-agent
+```
+2. Create and activate Python environment.
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
-
-## Run one local query
+3. Copy environment template.
+```bash
+cp .env.example .env
+```
+4. Start local infra stack.
+```bash
+docker compose -f docker-compose.yml up -d
+./scripts/healthcheck_stack.sh
+```
+5. Run one agent query end-to-end.
 ```bash
 python3 -m agent.data_agent.cli \
-  "Which customer segments declined in repeat purchase and had higher support volume?" \
-  --available-databases '[{"name":"sales_pg","type":"postgresql"},{"name":"support_mongo","type":"mongodb"}]' \
-  --schema-info '{"sales_pg":["orders","customers"],"support_mongo":["tickets","notes"]}'
+  "What was the maximum adjusted closing price in 2020 for The RealReal, Inc.?" \
+  --db-hints '["sqlite","duckdb"]'
 ```
-
-## Run benchmark trials
-Default (sample data, 5 trials):
-```bash
-python3 eval/run_trials.py --trials 5 --output results/local_results_5.json
-python3 eval/score_results.py --results results/local_results_5.json
-```
-
-Admin-target style run (50 trials per query):
-```bash
-python3 eval/run_trials.py --trials 50 --output results/local_results_50.json
-python3 eval/score_results.py --results results/local_results_50.json
-```
-
-## Run DataAgentBench (real query set)
-Clone DAB:
-```bash
-git clone --depth 1 https://github.com/ucbepic/DataAgentBench.git external/DataAgentBench
-```
-
-Pull real dataset files (required; DAB uses Git LFS):
-```bash
-# if command not found: sudo apt-get update && sudo apt-get install -y git-lfs
-git lfs install
-cd external/DataAgentBench
-git lfs pull
-# required by DAB for PATENTS dataset:
-bash download.sh
-cd ../..
-```
-
-Smoke test on one query:
-```bash
-python3 eval/run_dab_benchmark.py \
-  --dab-root external/DataAgentBench \
-  --datasets bookreview \
-  --query-limit 1 \
-  --trials 2 \
-  --output-detailed results/dab_smoke_detailed.json \
-  --output-submission results/dab_smoke_submission.json
-```
-
-Note: `eval/run_dab_benchmark.py` now disables MCP by default (`AGENT_USE_MCP=0`) so DAB queries run against each query's local DB artifacts (`.db` / `.sql`). Use `--allow-mcp` only if you intentionally want toolbox-backed execution.
-
-Full benchmark (54 queries x 50 runs):
-```bash
-python3 eval/run_dab_benchmark.py \
-  --dab-root external/DataAgentBench \
-  --trials 50 \
-  --output-detailed results/dab_full_50_detailed.json \
-  --output-submission results/dab_full_50_submission.json
-```
-
-If `total_valid_runs` is `0`, check these first:
-- `AGENT_OFFLINE_MODE` is `0` and `OPENROUTER_API_KEY` is set (offline mode only returns fallback summaries and usually scores `0`).
-- DAB files are not Git LFS pointers (`git lfs pull` completed successfully).
-- You did not force `--allow-mcp` by mistake for DAB runs.
-- If you see errors like `relation "public.*" does not exist`, rerun with default local mode (no `--allow-mcp`).
-
-## Run tests
+6. Run tests.
 ```bash
 python3 -m unittest discover -s tests -v
 ```
-
-## Code execution sandbox (challenge requirement)
-The challenge requires sandboxed execution outside the LLM context. This repo includes a local sandbox service with the required contract:
-- `GET /health`
-- `POST /execute` -> `{result, trace, validation_status, error_if_any}`
-
-Start the sandbox:
+7. Run evaluation harness baseline.
 ```bash
-python3 sandbox/sandbox_server.py
+python3 eval/run_trials.py --trials 2 --output results/smoke.json
+python3 eval/score_results.py --results results/smoke.json
 ```
 
-Enable agent-side sandbox routing for local SQL execution:
+## Non-Obvious Dependency and Environment Assumptions
+- Docker Compose v2 is required (`docker compose`, not legacy `docker-compose`).
+- `external/DataAgentBench` must exist locally because eval scripts read benchmark query folders directly.
+- If `external/DataAgentBench` is missing, clone it:
 ```bash
-AGENT_USE_SANDBOX=1
-SANDBOX_URL=http://localhost:8080
+git clone https://github.com/ucbepic/DataAgentBench.git external/DataAgentBench
 ```
 
-Quick health check:
-```bash
-curl -sS http://localhost:8080/health | python3 -m json.tool
+## DAB-Compatible Function Interface
+`agent/data_agent/dab_interface.py` provides:
+
+```python
+run_agent(question: str, available_databases: list[dict], schema_info: dict) -> dict
 ```
 
-## Docker setup for all 4 DB types
-Run PostgreSQL + MongoDB + MCP toolbox in Docker, and keep SQLite as a local file mounted into the toolbox container.
-
-Note: MCP Toolbox `v0.30.0` does not expose a DuckDB source type. This project executes DuckDB through the local Python `duckdb` driver (`DUCKDB_PATH`) while PostgreSQL/SQLite/MongoDB run through toolbox tools.
-
-Start services:
-```bash
-mkdir -p data/sqlite data/duckdb
-docker compose --env-file .env.example up -d
-```
-
-Verify toolbox tools:
-```bash
-curl -sS -X POST http://localhost:5000/mcp \
-  -H 'Content-Type: application/json' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' \
-  | python3 -m json.tool
-```
-
-If image pull fails with `error from registry: denied`, reset Docker auth and retry:
-```bash
-docker logout
-docker logout ghcr.io || true
-docker logout us-central1-docker.pkg.dev || true
-docker pull docker.io/library/postgres:16
-docker pull docker.io/library/mongo:7
-docker pull us-central1-docker.pkg.dev/database-toolbox/toolbox/toolbox:0.30.0
-docker compose --env-file .env.example up -d
-```
-
-Agent runtime `.env` minimum:
-```bash
-AGENT_USE_MCP=1
-MCP_TOOLBOX_URL=http://localhost:5000
-AGENT_OFFLINE_MODE=1
-DUCKDB_PATH=./data/duckdb/main.duckdb
-```
-
-Install Python dependencies inside your virtualenv (required for DuckDB local execution):
-```bash
-.venv/bin/pip install -r requirements.txt
-```
-
-Docker files used:
-- `docker-compose.yml`
-- `mcp/tools.docker.yaml`
-
-## EC2 implementation runbook
-Validated setup pattern for the team EC2 server:
-- Run PostgreSQL + MongoDB + MCP toolbox on EC2 with Docker Compose.
-- Use DuckDB locally on EC2 through Python (`duckdb` package + `DUCKDB_PATH`).
-- No Docker Desktop is needed on EC2 (Linux server).
-
-If Docker permission is denied for non-root user:
-```bash
-sudo systemctl enable --now docker
-sudo usermod -aG docker $USER
-# reconnect SSH (or run: newgrp docker)
-```
-
-Start/stop/status (replace compose file if you use a custom one such as `docker-compose.mcp.yml`):
-```bash
-COMPOSE_FILE=/home/data-analytics-agent/docker-compose.yml
-
-# start
-sudo docker compose -f "$COMPOSE_FILE" up -d
-
-# status
-sudo docker compose -f "$COMPOSE_FILE" ps
-
-# stop (keep containers)
-sudo docker compose -f "$COMPOSE_FILE" stop
-
-# stop and remove containers/network
-sudo docker compose -f "$COMPOSE_FILE" down
-```
-
-Health check MCP tools:
-```bash
-curl -sS -X POST http://localhost:5000/mcp \
-  -H 'Content-Type: application/json' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' \
-  | python3 -m json.tool
-```
-
-Expected database model on EC2:
-- MCP toolbox tools: PostgreSQL + SQLite + MongoDB.
-- DuckDB: local Python driver (not MCP toolbox in this `v0.30.0` setup).
-
-Verify DuckDB quickly:
-```bash
-python -m pip install duckdb
-python - <<'PY'
-import duckdb, os
-p = "/home/data-analytics-agent/data/duckdb/main.duckdb"
-os.makedirs(os.path.dirname(p), exist_ok=True)
-con = duckdb.connect(p)
-print(con.execute("select 1 as ok").fetchall())
-PY
-```
-
-Team operation tip:
-- Only one teammate needs to run `up -d` when services are down.
-- Everyone else can check status with `docker compose ... ps`.
-
-## OpenRouter mode
-By default the agent runs in offline mode for local reproducibility.
-
-Set these in `.env` to enable live model calls:
-```bash
-AGENT_OFFLINE_MODE=0
-OPENROUTER_API_KEY=...
-OPENROUTER_MODEL=openai/gpt-4.1-mini
-AGENT_USE_MCP=1
-MCP_TOOLBOX_URL=http://localhost:5000
-AGENT_USE_SANDBOX=1
-SANDBOX_URL=http://localhost:8080
-AGENT_MEMORY_ROOT=.oracle_forge_memory
-AGENT_RUNTIME_EVENTS_PATH=.oracle_forge_memory/events.jsonl
-AGENT_CORRECTIONS_LOG_PATH=kb/corrections/corrections_log.md
-AGENT_CONTEXT_PATH=agent/AGENT.md
-```
-
-## Project structure
-- `agent/`: agent code, `AGENT.md`, and context contract.
-- `eval/`: benchmark runner, scorer, held-out sample.
-- `kb/`: architecture/domain/evaluation/corrections knowledge layers.
-- `probes/`: adversarial probes.
-- `planning/`: AI-DLC playbook, team operating roadmap, inception, operations notes, and phase templates.
-- `signal/`: communication and community engagement logs.
-- `utils/`: reusable helpers.
-- `sandbox/`: local sandbox server for isolated code execution (`/execute` contract).
-- `mcp/tools.yaml`: MCP toolbox config template for 4 DB types.
-- `mcp/tools.docker.yaml`: Docker-targeted toolbox config for 4 DB types.
-- `docker-compose.yml`: local Postgres + MongoDB + MCP toolbox stack.
-- `results/`: benchmark outputs and submission artifacts.
+## Repository Deliverables Map
+- Agent code: `agent/`
+- Knowledge base: `kb/`
+- Evaluation harness: `eval/`
+- Adversarial probes: `probes/probes.md`
+- Planning/governance docs: `planning/`
+- Signal/communication artifacts: `signal/`
+- Benchmark outputs + score log: `results/`
+- Shared utility modules: `utils/`

@@ -1,0 +1,108 @@
+services:
+  postgres:
+    image: docker.io/library/postgres:16
+    container_name: oracle_forge_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: oracle_forge
+      POSTGRES_PASSWORD: oracle_forge
+      POSTGRES_DB: oracle_forge
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oracle_forge -d oracle_forge"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mongo:
+    image: docker.io/library/mongo:7
+    container_name: oracle_forge_mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand({ ping: 1 })"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mcp-toolbox:
+    image: us-central1-docker.pkg.dev/database-toolbox/toolbox/toolbox:latest
+    container_name: oracle_forge_mcp_toolbox
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    command: ["--address", "0.0.0.0", "--tools-file", "/app/tools.yaml"]
+    environment:
+      POSTGRES_URL: postgresql://oracle_forge:oracle_forge@postgres:5432/oracle_forge
+      MONGODB_URL: mongodb://mongo:27017
+      MONGODB_DB: oracle_forge
+      SQLITE_PATH: /data/sqlite/main.db
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mcp/tools.docker.yaml:/app/tools.yaml:ro
+      - ./data:/data
+
+  duckdb-bridge:
+    image: python:3.11-slim
+    container_name: oracle_forge_duckdb_bridge
+    restart: unless-stopped
+    working_dir: /app
+    command:
+      - /bin/sh
+      - -lc
+      - pip install --no-cache-dir flask==3.1.0 duckdb==1.5.2 && python sandbox/local_db_server.py
+    environment:
+      SQLITE_PATH: /data/sqlite/main.db
+      DUCKDB_PATH: /data/duckdb/main.duckdb
+      LOCAL_DB_SERVER_PORT: "5001"
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./:/app
+      - ./data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys;sys.exit(0 if urllib.request.urlopen('http://localhost:5001/health',timeout=2).status==200 else 1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  sandbox:
+    image: python:3.11-slim
+    container_name: oracle_forge_sandbox
+    restart: unless-stopped
+    working_dir: /app
+    command:
+      - /bin/sh
+      - -lc
+      - pip install --no-cache-dir flask==3.1.0 && python sandbox/sandbox_server.py
+    environment:
+      SANDBOX_HOST: 0.0.0.0
+      SANDBOX_PORT: "8080"
+      SANDBOX_PY_TIMEOUT_SECONDS: "3"
+      SANDBOX_MAX_PAYLOAD_CHARS: "50000"
+      SANDBOX_ALLOWED_ROOTS: /tmp:/data
+      LOG_LEVEL: INFO
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./:/app
+      - ./data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys;sys.exit(0 if urllib.request.urlopen('http://localhost:8080/health',timeout=2).status==200 else 1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  postgres_data:
+  mongo_data:

@@ -32,11 +32,12 @@ We built Oracle Forge, a multi-database analytics agent that answers enterprise-
 3. Maintain corrections log as mandatory context input.
 
 ## Definition of Done (Baseline)
-1. Agent callable matches DAB-style input/output contract.
-2. Multi-trial runner works for 5 and 50 trial settings.
-3. Score script outputs pass@1 summary.
-4. KB structure has 4 required layers with changelogs.
-5. Probe library has at least 15 probes across >=3 categories.
+1. `agent/data_agent/dab_interface.py` exposes `run_agent(question, available_databases, schema_info)` and returns a dict with `answer`, `query_trace`, and `confidence`.
+2. `python3 eval/run_trials.py --trials 5 --output results/smoke.json` runs without undocumented steps and writes structured per-query records.
+3. `python3 eval/score_results.py --results results/smoke.json` writes `results/dab_detailed.json` and `results/dab_submission.json` with pass@1.
+4. `kb/` contains `architecture/`, `domain/`, `evaluation/`, and `corrections/`, each with `CHANGELOG.md`.
+5. `probes/probes.md` contains at least 15 probes spanning at least 3 failure categories.
+6. Root `README.md` includes team roster, architecture diagram, clean-machine setup steps, and shared-server live-agent access info.
 
 ## Inception Gate Status
 - Status: Approved for baseline.

@@ -3,9 +3,10 @@
 - Date: 2026-04-08
 - AI-DLC phase reviewed: Inception
 - Participants: Team Cohere (all roles)
-- Hardest question asked:
+- Hardest question asked: If the benchmark penalizes unsupported tool traces, should we ship quickly with a single-db path or wait for multi-db traceability from day one?
+- Answer: We will ship a thin but trace-complete multi-db baseline first, even with lower accuracy, because missing traceability blocks objective evaluation and slows correction loops.
 - Decision: Approved baseline scaffold to begin Construction
-- Notes:
+- Notes: Inception gate approved after agreement that every query artifact must include pass/fail and trace evidence.
 
 - Date: 2026-04-09
 - AI-DLC phase reviewed: Construction process hardening

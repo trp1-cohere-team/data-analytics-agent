@@ -13,16 +13,10 @@ import logging
 import requests
 
 from agent.data_agent.config import (
-    AGENT_MAX_TOKENS,
     AGENT_OFFLINE_MODE,
-    AGENT_TEMPERATURE,
-    AGENT_TIMEOUT_SECONDS,
     OFFLINE_LLM_RESPONSE,
-    OPENROUTER_API_KEY,
-    OPENROUTER_APP_NAME,
-    OPENROUTER_BASE_URL,
-    OPENROUTER_MODEL,
 )
+from agent.data_agent.openrouter_client import post_chat_completions
 from agent.data_agent.types import ContextPacket
 
 logger = logging.getLogger(__name__)
@@ -146,23 +140,10 @@ def _call_llm(prompt: str) -> dict:
     SEC-15: All network errors are caught; offline stub is returned on failure.
     """
     try:
-        resp = requests.post(
-            f"{OPENROUTER_BASE_URL}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                "HTTP-Referer": OPENROUTER_APP_NAME,
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": OPENROUTER_MODEL,
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": AGENT_MAX_TOKENS,
-                "temperature": AGENT_TEMPERATURE,
-            },
-            timeout=AGENT_TIMEOUT_SECONDS,
+        return post_chat_completions(
+            messages=[{"role": "user", "content": prompt}],
+            logger=logger,
         )
-        resp.raise_for_status()
-        return resp.json()
     except requests.Timeout:
         logger.warning("result_synthesizer: LLM call timed out")
         return OFFLINE_LLM_RESPONSE

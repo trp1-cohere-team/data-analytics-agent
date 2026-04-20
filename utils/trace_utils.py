@@ -6,10 +6,54 @@ and a human-readable summary formatter.
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
-from agent.data_agent.types import TraceEvent
+
+@dataclass
+class TraceEvent:
+    """Standalone trace event model for utility-layer reuse.
+
+    Intentionally mirrors the runtime event payload shape but does not depend
+    on any agent modules, so this utility can be reused in isolation.
+    """
+
+    event_type: str
+    session_id: str
+    timestamp: str
+    tool_name: str = ""
+    db_type: str = ""
+    input_summary: str = ""
+    outcome: str = ""
+    diagnosis: str = ""
+    retry_count: int = 0
+    backend: str = ""
+    extra: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict:
+        d: dict[str, Any] = {
+            "event_type": self.event_type,
+            "session_id": self.session_id,
+            "timestamp": self.timestamp,
+        }
+        if self.tool_name:
+            d["tool_name"] = self.tool_name
+        if self.db_type:
+            d["db_type"] = self.db_type
+        if self.input_summary:
+            d["input_summary"] = self.input_summary
+        if self.outcome:
+            d["outcome"] = self.outcome
+        if self.diagnosis:
+            d["diagnosis"] = self.diagnosis
+        if self.retry_count:
+            d["retry_count"] = self.retry_count
+        if self.backend:
+            d["backend"] = self.backend
+        if self.extra:
+            d["extra"] = self.extra
+        return d
 
 
 def build_trace_event(

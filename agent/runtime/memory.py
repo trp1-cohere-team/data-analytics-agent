@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 from typing import Optional
 
 from agent.data_agent.config import (
@@ -35,6 +36,93 @@ class MemoryManager:
         self._index_path = os.path.join(self._root, "index.json")
         self._topics_dir = os.path.join(self._root, "topics")
         self._sessions_dir = os.path.join(self._root, "sessions")
+        self._preferences_path = os.path.join(self._root, "user_preferences.json")
+
+    # ------------------------------------------------------------------
+    # Cross-session user preferences
+    # ------------------------------------------------------------------
+
+    _PREFERENCE_PATTERNS: tuple[re.Pattern[str], ...] = (
+        re.compile(r"\b(?:i\s+)?prefer\s+([^.!?\n]{3,160})", re.IGNORECASE),
+        re.compile(r"\bplease\s+use\s+([^.!?\n]{3,160})", re.IGNORECASE),
+        re.compile(r"\balways\s+use\s+([^.!?\n]{3,160})", re.IGNORECASE),
+        re.compile(r"\bdon['’]?t\s+([^.!?\n]{3,160})", re.IGNORECASE),
+        re.compile(r"\bdo\s+not\s+([^.!?\n]{3,160})", re.IGNORECASE),
+    )
+
+    def load_preferences(self) -> list[str]:
+        """Load persisted user preferences shared across sessions."""
+        if not os.path.isfile(self._preferences_path):
+            return []
+        try:
+            with open(self._preferences_path, "r", encoding="utf-8") as fh:
+                data = json.load(fh)
+        except (OSError, json.JSONDecodeError) as exc:
+            logger.warning("memory: failed to read preferences: %s", exc)
+            return []
+
+        if not isinstance(data, list):
+            return []
+
+        prefs: list[str] = []
+        for item in data:
+            if isinstance(item, str):
+                text = item.strip()
+                if text and text not in prefs:
+                    prefs.append(text)
+        return prefs[:20]
+
+    def save_preferences(self, preferences: list[str]) -> None:
+        """Persist user preferences to disk."""
+        cleaned: list[str] = []
+        for pref in preferences:
+            if not isinstance(pref, str):
+                continue
+            text = pref.strip()
+            if not text:
+                continue
+            if text not in cleaned:
+                cleaned.append(text)
+        cleaned = cleaned[:20]
+
+        try:
+            os.makedirs(self._root, exist_ok=True)
+            with open(self._preferences_path, "w", encoding="utf-8") as fh:
+                json.dump(cleaned, fh, indent=2)
+        except OSError as exc:
+            logger.warning("memory: failed to write preferences: %s", exc)
+
+    def update_preferences_from_text(self, user_text: str) -> list[str]:
+        """Extract and persist preference statements from a user turn."""
+        if not isinstance(user_text, str) or not user_text.strip():
+            return self.load_preferences()
+
+        discovered: list[str] = []
+        for pattern in self._PREFERENCE_PATTERNS:
+            for match in pattern.findall(user_text):
+                candidate = self._normalize_preference(match)
+                if candidate and candidate not in discovered:
+                    discovered.append(candidate)
+
+        if not discovered:
+            return self.load_preferences()
+
+        existing = self.load_preferences()
+        for pref in discovered:
+            if pref not in existing:
+                existing.append(pref)
+        self.save_preferences(existing)
+        return existing
+
+    @staticmethod
+    def _normalize_preference(raw: str) -> str:
+        text = re.sub(r"\s+", " ", str(raw)).strip(" :;,-")
+        if not text:
+            return ""
+        lowered = text.lower()
+        if lowered.startswith("that "):
+            text = text[5:].strip()
+        return text[:160]
 
     # ------------------------------------------------------------------
     # Session transcript (Layer 3)
@@ -324,5 +412,11 @@ class MemoryManager:
                     summaries.append(f"**{key}**: {content[:200]}")
             if summaries:
                 parts.append("### Remembered Topics\n" + "\n".join(summaries))
+
+        # Cross-session user preferences
+        preferences = self.load_preferences()
+        if preferences:
+            lines = [f"- {p}" for p in preferences[:10]]
+            parts.append("### User Preferences\n" + "\n".join(lines))
 
         return "\n\n".join(parts)

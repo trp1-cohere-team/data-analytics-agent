@@ -127,6 +127,63 @@ class TestConductorOffline(unittest.TestCase):
         self.assertEqual(len(result.tool_calls), 1)
         self.assertFalse(result.answer.startswith("TOOL_CALL:"))
 
+    def test_query_recovery_rewrites_quoted_identifier(self) -> None:
+        """Query-category recovery should rewrite common spaced identifiers."""
+        seeded = self.conductor._recover_query_syntax(  # pylint: disable=protected-access
+            "query_duckdb",
+            {"sql": "SELECT MAX(Adj Close) FROM REAL;"},
+        )
+        self.assertIsNotNone(seeded)
+        tool_name, params = seeded
+        self.assertEqual(tool_name, "query_duckdb")
+        self.assertIn('"Adj Close"', params.get("sql", ""))
+
+    def test_join_key_recovery_resolves_using_clause(self) -> None:
+        """Join-key recovery should replace USING(...) with explicit ON join key."""
+        sql = (
+            "SELECT * FROM orders o "
+            "JOIN customers c USING (bad_key) "
+            "WHERE o.amount > 0"
+        )
+        with patch.object(
+            self.conductor,
+            "_schema_columns_for_table",
+            side_effect=[["customer_id", "amount"], ["customer_id", "name"]],
+        ):
+            seeded = self.conductor._recover_join_key(  # pylint: disable=protected-access
+                "query_postgresql",
+                {"sql": sql},
+            )
+        self.assertIsNotNone(seeded)
+        _tool_name, params = seeded
+        rewritten = params.get("sql", "")
+        self.assertIn("ON o.customer_id = c.customer_id", rewritten)
+        self.assertNotIn("USING (bad_key)", rewritten)
+
+    def test_db_type_recovery_reroutes_tool(self) -> None:
+        """DB-type recovery should reroute SQL payload to the inferred backend."""
+        seeded = self.conductor._recover_db_type(  # pylint: disable=protected-access
+            "query_sqlite",
+            {"sql": "SELECT * FROM AAPL"},
+            "wrong database dialect: use DuckDB for this table",
+            {"db_type": "sqlite"},
+        )
+        self.assertIsNotNone(seeded)
+        tool_name, params = seeded
+        self.assertEqual(tool_name, "query_duckdb")
+        self.assertIn("SELECT * FROM AAPL", params.get("sql", ""))
+
+    def test_data_quality_recovery_builds_count_probe(self) -> None:
+        """Data-quality recovery should use a COUNT probe over the prior SQL."""
+        seeded = self.conductor._recover_data_quality(  # pylint: disable=protected-access
+            "query_postgresql",
+            {"sql": "SELECT id FROM users WHERE status = 'active';"},
+        )
+        self.assertIsNotNone(seeded)
+        tool_name, params = seeded
+        self.assertEqual(tool_name, "query_postgresql")
+        self.assertIn("SELECT COUNT(*) AS row_count", params.get("sql", ""))
+
 
 if __name__ == "__main__":
     unittest.main()

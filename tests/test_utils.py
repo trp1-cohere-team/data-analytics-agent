@@ -7,7 +7,6 @@ import tempfile
 import time
 import unittest
 
-from agent.data_agent.types import TraceEvent
 from utils.db_utils import db_type_from_kind, sanitize_sql_for_log, validate_db_url
 from utils.text_utils import (
     extract_keywords,
@@ -15,7 +14,7 @@ from utils.text_utils import (
     freshness_bonus,
     score_overlap,
 )
-from utils.trace_utils import build_trace_event, format_trace_summary
+from utils.trace_utils import TraceEvent, build_trace_event, format_trace_summary
 
 
 class TestDbUtils(unittest.TestCase):

@@ -82,11 +82,15 @@ When `AGENT_OFFLINE_MODE=1`, `config.py` exports stub data consumed by downstrea
 }
 ```
 
-**`OFFLINE_TOOL_LIST`** — merged 4-tool flat list (matches `tools.yaml` schema):
+**`OFFLINE_TOOL_LIST`** — merged flat tool list (matches `tools.yaml` schema):
 ```python
 [
     {"name": "query_postgresql", "kind": "postgres-sql", "source": "postgres_db", "description": "Execute read-only SQL against PostgreSQL"},
-    {"name": "query_mongodb", "kind": "mongodb-aggregate", "source": "mongo_db", "description": "Execute aggregation pipeline against MongoDB"},
+    {"name": "query_mongodb_yelp_review", "kind": "mongodb-aggregate", "source": "mongo_db", "description": "Execute aggregation pipeline against MongoDB yelp_review collection"},
+    {"name": "query_mongodb_yelp_user", "kind": "mongodb-aggregate", "source": "mongo_db", "description": "Execute aggregation pipeline against MongoDB yelp_user collection"},
+    {"name": "query_mongodb_yelp_tip", "kind": "mongodb-aggregate", "source": "mongo_db", "description": "Execute aggregation pipeline against MongoDB yelp_tip collection"},
+    {"name": "query_mongodb_agnews_authors", "kind": "mongodb-aggregate", "source": "mongo_db", "description": "Execute aggregation pipeline against MongoDB agnews_authors collection"},
+    {"name": "query_mongodb_agnews_article_metadata", "kind": "mongodb-aggregate", "source": "mongo_db", "description": "Execute aggregation pipeline against MongoDB agnews_article_metadata collection"},
     {"name": "query_sqlite", "kind": "sqlite-sql", "source": "sqlite_db", "description": "Execute read-only SQL against SQLite"},
     {"name": "query_duckdb", "kind": "duckdb_bridge_sql", "source": "duckdb_bridge", "description": "Execute read-only SQL against DuckDB via custom MCP bridge"}
 ]

@@ -17,7 +17,7 @@ Business rules for the foundation layer focus on configuration safety, event int
 ## BR-02: Offline Mode Completeness
 **Rule**: When `AGENT_OFFLINE_MODE=1`, every module that would make an external call MUST use stub data from `config.py` instead.
 - LLM calls: `OFFLINE_LLM_RESPONSE`
-- MCP tool discovery: `OFFLINE_TOOL_LIST` (all 4 tools)
+- MCP tool discovery: `OFFLINE_TOOL_LIST` (all configured tools)
 - MCP tool invocation: `OFFLINE_INVOKE_RESULTS` (keyed by db_type)
 - DuckDB bridge: same `OFFLINE_INVOKE_RESULTS["duckdb"]`
 - **Zero HTTP calls permitted** when offline mode is active

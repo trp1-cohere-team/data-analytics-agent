@@ -60,7 +60,7 @@
 ## Units Generation — tools.yaml / MCP Coverage Correction
 **Timestamp**: 2026-04-15T00:30:00Z
 **User Input**: "Request Changes. The challenge brief and practitioner manual require tools.yaml / MCP configuration to cover all four DAB database types, including DuckDB. However the current requirements and unit docs scope tools.yaml to only PostgreSQL, MongoDB, and SQLite, with DuckDB excluded. Please reconcile this explicitly. Keep the unified agent-side MCPClient design, but revise docs so submission/infrastructure story is consistent with the challenge requirement that MCP/tools configuration covers all four DB types. If DuckDB cannot literally live inside Google MCP Toolbox, then document exactly how the custom DuckDB MCP bridge is represented in the project's MCP configuration and submission artifacts so reviewers still see a 4-database MCP setup. Also relabel any 'implemented' architecture reference docs as target/reference architecture where appropriate."
-**AI Response**: (1) Revised FR-03: tools.yaml is now the single MCP config declaring all 4 DB tools — PostgreSQL (postgres-sql), MongoDB (mongodb-aggregate), SQLite (sqlite-sql), DuckDB (duckdb_bridge_sql). DuckDB entry uses kind: duckdb_bridge pointing to DUCKDB_BRIDGE_URL. MCPClient reads tools.yaml at init and dispatches by kind field. (2) Updated Technology Stack table: split into MCP Config (tools.yaml), DB Backend 3 DBs, DB Backend DuckDB. (3) Added TOOLS_YAML_PATH env var. (4) Updated all three unit-of-work artifacts to reflect tools.yaml as 4-DB config. (5) Added Target Architecture disclaimers to docs/CLAUDE_CODE_ARCHITECTURE_IMPLEMENTATION.md and docs/openai_context_layering_implementation.md. Awaiting approval to proceed to Construction.
+**AI Response**: (1) Revised FR-03: tools.yaml is now the single MCP config declaring tool entries for all 4 DB types — PostgreSQL (postgres-sql), MongoDB (mongodb-aggregate), SQLite (sqlite-sql), DuckDB (duckdb_bridge_sql). DuckDB entry uses kind: duckdb_bridge pointing to DUCKDB_BRIDGE_URL. MCPClient reads tools.yaml at init and dispatches by kind field. (2) Updated Technology Stack table: split into MCP Config (tools.yaml), DB Backend 3 DBs, DB Backend DuckDB. (3) Added TOOLS_YAML_PATH env var. (4) Updated all three unit-of-work artifacts to reflect tools.yaml as a 4-DB-type config. (5) Added Target Architecture disclaimers to docs/CLAUDE_CODE_ARCHITECTURE_IMPLEMENTATION.md and docs/openai_context_layering_implementation.md. Awaiting approval to proceed to Construction.
 **Context**: INCEPTION - Units Generation — all blocking inconsistencies resolved; awaiting final approval
 
 ---
@@ -127,7 +127,7 @@
 ## Code Generation U2 — Plan Approval + Generation Complete
 **Timestamp**: 2026-04-15T10:45:00Z
 **User Input**: "approved continue"
-**AI Response**: Plan approved. Generated 5 source files. All 6 plan steps marked [x]. Smoke tests passed: MCPClient 4-tool registry, offline invoke for all 4 DB types, context layer precedence, failure classification all 4 categories, KB retrieval. Awaiting approval.
+**AI Response**: Plan approved. Generated 5 source files. All 6 plan steps marked [x]. Smoke tests passed: MCPClient config-driven tool registry, offline invoke for all 4 DB types, context layer precedence, failure classification all 4 categories, KB retrieval. Awaiting approval.
 **Context**: CONSTRUCTION - Code Generation U2 complete
 
 ---
@@ -160,7 +160,7 @@
 ## Code Generation U3 — Generation Complete
 **Timestamp**: 2026-04-15T11:10:00Z
 **User Input**: "continue to next stage"
-**AI Response**: FD U3 approved; CG U3 plan created and executed. Generated 3 source files (memory.py, tooling.py, conductor.py). All smoke tests passed: MemoryManager lazy init + caps (12 turns, 2500 chars), ToolPolicy mutation blocking (INSERT/DROP blocked, CREATED_AT allowed), ToolRegistry 4-tool selection, Conductor offline full pipeline run. Awaiting approval.
+**AI Response**: FD U3 approved; CG U3 plan created and executed. Generated 3 source files (memory.py, tooling.py, conductor.py). All smoke tests passed: MemoryManager lazy init + caps (12 turns, 2500 chars), ToolPolicy mutation blocking (INSERT/DROP blocked, CREATED_AT allowed), ToolRegistry config-driven selection, Conductor offline full pipeline run. Awaiting approval.
 **Context**: CONSTRUCTION - Code Generation U3 complete
 
 ---

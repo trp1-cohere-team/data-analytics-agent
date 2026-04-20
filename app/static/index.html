@@ -63,11 +63,6 @@
           </div>
         </header>
 
-        <nav class="mobile-tabs" id="mobileTabs">
-          <button class="mobile-tab active" data-panel="chat" type="button">Chat</button>
-          <button class="mobile-tab" data-panel="details" type="button">Inspector</button>
-        </nav>
-
         <section class="dashboard">
           <div class="chat-column" id="chatColumn">
             <section class="panel chat-panel">
@@ -117,60 +112,73 @@
             </section>
           </div>
 
-          <aside class="details-column" id="detailsColumn">
+          <aside class="details-column">
             <section class="panel details-panel">
               <div class="panel-header">
-                <div>
-                  <h2>Inspector</h2>
-                  <p class="panel-subtitle">Confidence &amp; tool trace</p>
+                <div class="panel-title-wrap">
+                  <h2>Challenge Evidence</h2>
+                  <p class="panel-subtitle">Traceability, corrections, and benchmark signals for what the agent just answered.</p>
                 </div>
               </div>
 
               <div class="details-body">
-                <div class="details-empty" id="detailsEmpty">
-                  <div class="empty-icon" aria-hidden="true">
-                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                      <circle cx="16" cy="16" r="13" stroke="currentColor" stroke-width="1.5"/>
-                      <path d="M16 10v7M16 20.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                    </svg>
-                  </div>
-                  <p>Select an agent reply to inspect confidence, trace data, and tool activity.</p>
-                </div>
+                <div class="details-content">
+                  <section class="metric-card" id="runtimeCard">
+                    <div class="metric-row">
+                      <span class="metric-label-inline">Runtime mode</span>
+                      <strong id="runtimeMode">checking...</strong>
+                    </div>
+                    <div class="metric-row">
+                      <span class="metric-label-inline">Configured tools</span>
+                      <strong id="runtimeTools">0</strong>
+                    </div>
+                  </section>
 
-                <div class="details-content hidden" id="detailsContent">
-                  <div class="metric-card confidence-card">
+                  <section class="metric-card">
+                    <span class="metric-label">Latest Response</span>
                     <div class="metric-row">
                       <span class="metric-label-inline">Confidence</span>
-                      <strong id="confidenceValue" class="confidence-pct">—</strong>
+                      <strong id="evidenceConfidence">ready</strong>
                     </div>
-                    <div class="confidence-bar">
-                      <div id="confidenceBarFill"></div>
+                    <div class="metric-row">
+                      <span class="metric-label-inline">Timestamp</span>
+                      <strong id="evidenceTimestamp">--</strong>
                     </div>
-                  </div>
-
-                  <div class="detail-grid">
-                    <div class="metric-card">
-                      <span class="metric-label">Trace ID</span>
-                      <button class="copy-chip" id="traceIdButton" type="button"></button>
-                    </div>
-                    <div class="metric-card">
-                      <span class="metric-label">Failures</span>
-                      <span class="failure-badge" id="failureBadge">0</span>
-                    </div>
-                  </div>
-
-                  <div class="metric-card">
-                    <span class="metric-label">Timestamp</span>
-                    <strong id="detailTimestamp">—</strong>
-                  </div>
-
-                  <div class="timeline-block">
-                    <div class="timeline-header metric-row">
+                    <div class="metric-row">
                       <span class="metric-label-inline">Tool calls</span>
-                      <span class="tool-count-chip" id="toolCallCount">0</span>
+                      <strong id="evidenceToolCalls">0</strong>
                     </div>
-                    <div class="tool-timeline" id="toolTimeline"></div>
-                  </div>
+                  </section>
+
+                  <section class="metric-card">
+                    <span class="metric-label">Tool Timeline</span>
+                    <ul class="insight-list" id="toolTimelineList">
+                      <li class="insight-item muted">No tool calls recorded yet.</li>
+                    </ul>
+                  </section>
+
+                  <section class="metric-card">
+                    <span class="metric-label">Correction Diagnostics</span>
+                    <ul class="insight-list" id="correctionList">
+                      <li class="insight-item muted">No corrections observed yet.</li>
+                    </ul>
+                  </section>
+
+                  <section class="metric-card">
+                    <span class="metric-label">Evaluation Snapshot</span>
+                    <div class="metric-row">
+                      <span class="metric-label-inline">pass@1</span>
+                      <strong id="evalPass">--</strong>
+                    </div>
+                    <div class="metric-row">
+                      <span class="metric-label-inline">Scored entries</span>
+                      <strong id="evalEntries">--</strong>
+                    </div>
+                    <div class="metric-row">
+                      <span class="metric-label-inline">Probe coverage</span>
+                      <strong id="evalProbes">--</strong>
+                    </div>
+                  </section>
                 </div>
               </div>
             </section>

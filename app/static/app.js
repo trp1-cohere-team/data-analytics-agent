@@ -2,40 +2,42 @@ const state = {
   messages: [],
   selectedMessageId: null,
   loadingMessageId: null,
-  expandedToolCalls: {},
+  dashboard: {
+    health: null,
+    summary: null,
+  },
 };
 
-const messageList       = document.getElementById("messageList");
-const questionInput     = document.getElementById("questionInput");
-const sendButton        = document.getElementById("sendButton");
-const statusPill        = document.getElementById("statusPill");
-const statusText        = document.getElementById("statusText");
-const detailsEmpty      = document.getElementById("detailsEmpty");
-const detailsContent    = document.getElementById("detailsContent");
-const confidenceValue   = document.getElementById("confidenceValue");
-const confidenceBarFill = document.getElementById("confidenceBarFill");
-const traceIdButton     = document.getElementById("traceIdButton");
-const failureBadge      = document.getElementById("failureBadge");
-const detailTimestamp   = document.getElementById("detailTimestamp");
-const toolTimeline      = document.getElementById("toolTimeline");
-const toolCallCount     = document.getElementById("toolCallCount");
-const historyButton     = document.getElementById("historyButton");
-const clearChatButton   = document.getElementById("clearChatButton");
+const messageList = document.getElementById("messageList");
+const questionInput = document.getElementById("questionInput");
+const sendButton = document.getElementById("sendButton");
+const statusPill = document.getElementById("statusPill");
+const statusText = document.getElementById("statusText");
+const historyButton = document.getElementById("historyButton");
+const clearChatButton = document.getElementById("clearChatButton");
 const closeHistoryButton = document.getElementById("closeHistoryButton");
-const historyDrawer     = document.getElementById("historyDrawer");
-const drawerBackdrop    = document.getElementById("drawerBackdrop");
-const historyList       = document.getElementById("historyList");
-const suggestionRow     = document.getElementById("suggestionRow");
-const hintSummary       = document.getElementById("hintSummary");
-const charCount         = document.getElementById("charCount");
-const chatColumnEl      = document.getElementById("chatColumn");
-const detailsColumnEl   = document.getElementById("detailsColumn");
-const sendLabel         = sendButton.querySelector(".send-label");
+const historyDrawer = document.getElementById("historyDrawer");
+const drawerBackdrop = document.getElementById("drawerBackdrop");
+const historyList = document.getElementById("historyList");
+const suggestionRow = document.getElementById("suggestionRow");
+const hintSummary = document.getElementById("hintSummary");
+const charCount = document.getElementById("charCount");
+const sendLabel = sendButton.querySelector(".send-label");
+const runtimeMode = document.getElementById("runtimeMode");
+const runtimeTools = document.getElementById("runtimeTools");
+const evidenceConfidence = document.getElementById("evidenceConfidence");
+const evidenceTimestamp = document.getElementById("evidenceTimestamp");
+const evidenceToolCalls = document.getElementById("evidenceToolCalls");
+const toolTimelineList = document.getElementById("toolTimelineList");
+const correctionList = document.getElementById("correctionList");
+const evalPass = document.getElementById("evalPass");
+const evalEntries = document.getElementById("evalEntries");
+const evalProbes = document.getElementById("evalProbes");
 
 const starterMessage = {
   role: "agent",
   content:
-    "Start with a stock question, a schema-routing question, or anything that needs tool-backed analysis. Click any reply to inspect the evidence on the right.",
+    "Start with a stock question, a schema-routing question, or anything that needs tool-backed analysis.",
   result: {
     answer: "",
     confidence: 0.92,
@@ -46,10 +48,6 @@ const starterMessage = {
 };
 
 marked.setOptions({ breaks: true, gfm: true });
-
-// ==========================================
-// Utilities
-// ==========================================
 
 function createId(prefix) {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
@@ -112,29 +110,41 @@ function shouldCollapseMessage(message) {
   return content.length > 420 || (content.match(/\n/g) || []).length > 8;
 }
 
-function confidenceColor(confidence) {
-  if (confidence > 0.8) return "var(--green)";
-  if (confidence > 0.5) return "var(--yellow)";
-  return "var(--red)";
+function buildEvidence(message) {
+  const result = message?.result || {};
+  const rawConfidence = Number(result.confidence);
+  const confidence = Number.isFinite(rawConfidence)
+    ? `${Math.round(Math.max(0, Math.min(rawConfidence, 1)) * 100)}%`
+    : "ready";
+  const timestamp = formatTimestamp(message.timestamp);
+  const toolCalls = Array.isArray(result.tool_calls) ? result.tool_calls : [];
+  return {
+    confidence,
+    timestamp,
+    toolCallCount: toolCalls.length,
+  };
 }
 
-// ==========================================
-// Mobile Panel Switching
-// ==========================================
-
-const mobileTabs = document.querySelectorAll(".mobile-tab");
-
-function setMobilePanel(panel) {
-  mobileTabs.forEach((tab) => tab.classList.toggle("active", tab.dataset.panel === panel));
-  chatColumnEl.classList.toggle("mobile-active", panel === "chat");
-  detailsColumnEl.classList.toggle("mobile-active", panel === "details");
+function inferDbType(toolName) {
+  const normalized = String(toolName || "").toLowerCase();
+  if (normalized.includes("mongo")) return "mongodb";
+  if (normalized.includes("duck")) return "duckdb";
+  if (normalized.includes("sqlite")) return "sqlite";
+  if (normalized.includes("postgres")) return "postgresql";
+  return "unknown";
 }
 
-mobileTabs.forEach((tab) => tab.addEventListener("click", () => setMobilePanel(tab.dataset.panel)));
-
-// ==========================================
-// Message Rendering
-// ==========================================
+function getCurrentAgentMessage() {
+  if (state.selectedMessageId) {
+    const selected = state.messages.find((msg) => msg.id === state.selectedMessageId && msg.role === "agent");
+    if (selected && !selected.loading) return selected;
+  }
+  for (let i = state.messages.length - 1; i >= 0; i -= 1) {
+    const msg = state.messages[i];
+    if (msg.role === "agent" && !msg.loading) return msg;
+  }
+  return null;
+}
 
 function renderMessages() {
   const stickToBottom = shouldStickToBottom();
@@ -148,17 +158,6 @@ function renderMessages() {
     wrapper.className = `message ${message.role}`;
     if (isFirstInGroup) wrapper.classList.add("first-in-group");
     if (message.id === state.selectedMessageId) wrapper.classList.add("selected");
-
-    if (message.role === "agent" && !message.loading) {
-      wrapper.tabIndex = 0;
-      wrapper.addEventListener("click", () => selectMessage(message.id));
-      wrapper.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          selectMessage(message.id);
-        }
-      });
-    }
 
     if (isFirstInGroup) {
       const meta = document.createElement("div");
@@ -198,12 +197,6 @@ function renderMessages() {
       const actions = document.createElement("div");
       actions.className = "message-actions";
 
-      const inspectBtn = document.createElement("button");
-      inspectBtn.className = "message-action";
-      inspectBtn.type = "button";
-      inspectBtn.textContent = "Inspect";
-      inspectBtn.addEventListener("click", (e) => { e.stopPropagation(); selectMessage(message.id); });
-
       const copyBtn = document.createElement("button");
       copyBtn.className = "message-action";
       copyBtn.type = "button";
@@ -213,14 +206,18 @@ function renderMessages() {
         try {
           await navigator.clipboard.writeText(message.content || "");
           copyBtn.textContent = "Copied ✓";
-          setTimeout(() => { copyBtn.textContent = "Copy"; }, 1400);
+          setTimeout(() => {
+            copyBtn.textContent = "Copy";
+          }, 1400);
         } catch {
           copyBtn.textContent = "Failed";
-          setTimeout(() => { copyBtn.textContent = "Copy"; }, 1400);
+          setTimeout(() => {
+            copyBtn.textContent = "Copy";
+          }, 1400);
         }
       });
 
-      actions.append(inspectBtn, copyBtn);
+      actions.append(copyBtn);
 
       if (shouldCollapseMessage(message)) {
         const toggleBtn = document.createElement("button");
@@ -235,6 +232,10 @@ function renderMessages() {
       }
 
       wrapper.appendChild(actions);
+      wrapper.addEventListener("click", () => {
+        state.selectedMessageId = message.id;
+        renderMessages();
+      });
     }
 
     messageList.appendChild(wrapper);
@@ -243,15 +244,7 @@ function renderMessages() {
   document.querySelectorAll("pre code").forEach((block) => hljs.highlightElement(block));
   suggestionRow.style.display = state.messages.length > 1 ? "none" : "flex";
   scrollToLatest(!stickToBottom);
-  renderDetails();
-}
-
-function selectMessage(messageId) {
-  state.selectedMessageId = messageId;
-  if (window.innerWidth <= 768) {
-    setMobilePanel("details");
-  }
-  renderMessages();
+  renderDashboard();
 }
 
 function toggleMessageExpanded(messageId) {
@@ -261,95 +254,78 @@ function toggleMessageExpanded(messageId) {
   renderMessages();
 }
 
-function getSelectedMessage() {
-  return state.messages.find((m) => m.id === state.selectedMessageId) || null;
-}
+function renderDashboard() {
+  const selected = getCurrentAgentMessage();
+  const calls = Array.isArray(selected?.result?.tool_calls) ? selected.result.tool_calls : [];
+  const failureCount = Number(selected?.result?.failure_count || 0);
 
-// ==========================================
-// Details Panel
-// ==========================================
-
-function renderDetails() {
-  const selected = getSelectedMessage();
-  if (!selected || selected.role !== "agent" || selected.loading || !selected.result) {
-    detailsEmpty.classList.remove("hidden");
-    detailsContent.classList.add("hidden");
-    return;
+  if (!selected) {
+    evidenceConfidence.textContent = "ready";
+    evidenceTimestamp.textContent = "--";
+    evidenceToolCalls.textContent = "0";
+  } else {
+    const evidence = buildEvidence(selected);
+    evidenceConfidence.textContent = evidence.confidence;
+    evidenceTimestamp.textContent = evidence.timestamp;
+    evidenceToolCalls.textContent = String(evidence.toolCallCount);
   }
 
-  detailsEmpty.classList.add("hidden");
-  detailsContent.classList.remove("hidden");
-
-  const confidence = Number(selected.result.confidence || 0);
-  const pct = Math.round(confidence * 100);
-  confidenceValue.textContent = `${pct}%`;
-  confidenceBarFill.style.width  = `${Math.max(0, Math.min(confidence, 1)) * 100}%`;
-  confidenceBarFill.style.background = confidenceColor(confidence);
-
-  traceIdButton.textContent = selected.result.trace_id || "No trace";
-  failureBadge.textContent  = String(selected.result.failure_count ?? 0);
-  detailTimestamp.textContent = formatTimestamp(selected.timestamp);
-
-  const toolCalls = Array.isArray(selected.result.tool_calls) ? selected.result.tool_calls : [];
-  toolCallCount.textContent = String(toolCalls.length);
-  toolTimeline.innerHTML = "";
-
-  if (!toolCalls.length) {
-    const emptyCard = document.createElement("div");
-    emptyCard.className = "tool-card";
-    emptyCard.style.cssText = "padding:12px 13px; color:var(--muted); font-size:0.84rem;";
-    emptyCard.textContent = "No tool calls were recorded for this response.";
-    toolTimeline.appendChild(emptyCard);
-    return;
-  }
-
-  toolCalls.forEach((call, index) => {
-    const card = document.createElement("div");
-    const callKey = `${selected.id}-${index}`;
-    const expanded = state.expandedToolCalls[callKey] ?? index === 0;
-
-    card.className = `tool-card ${call.success ? "success-card" : "failed-card"}`;
-    if (expanded) card.classList.add("expanded");
-
-    const params  = call.params || {};
-    const sql     = typeof params.sql === "string" ? params.sql : JSON.stringify(params, null, 2);
-    const summary = sql.split("\n")[0].slice(0, 120);
-    const statusClass = call.success ? "tool-status success" : "tool-status";
-    const statusLabel = call.success ? "Success" : "Failed";
-
-    card.innerHTML = `
-      <button class="tool-trigger" type="button" aria-expanded="${expanded}">
-        <div class="tool-trigger-main">
-          <div class="tool-title">${escapeHtml(call.tool_name || `Tool ${index + 1}`)}</div>
-          <div class="${statusClass}">${statusLabel}</div>
-          <div class="tool-summary">${escapeHtml(summary || "{}")}</div>
+  toolTimelineList.innerHTML = "";
+  if (!calls.length) {
+    toolTimelineList.innerHTML = '<li class="insight-item muted">No tool calls were recorded for this response.</li>';
+  } else {
+    calls.forEach((call, idx) => {
+      const toolName = call.tool_name || call.tool || "unknown_tool";
+      const dbType = inferDbType(toolName);
+      const status = call.success === false ? "failed" : "ok";
+      const retry = Number(call.retry || 0);
+      const li = document.createElement("li");
+      li.className = "insight-item";
+      li.innerHTML = `
+        <div class="insight-top">
+          <strong>${idx + 1}. ${escapeHtml(toolName)}</strong>
+          <span class="insight-badge ${status}">${status}</span>
         </div>
-        <div class="tool-trigger-side">
-          <span class="message-meta">#${index + 1}</span>
-          <span class="tool-chevron">▸</span>
-        </div>
-      </button>
-      ${expanded ? `
-      <div class="tool-details">
-        <span class="tool-params-label">Parameters</span>
-        <pre><code class="language-sql">${escapeHtml(sql || "{}")}</code></pre>
-      </div>` : ""}
-    `;
-
-    card.querySelector(".tool-trigger").addEventListener("click", () => {
-      state.expandedToolCalls[callKey] = !expanded;
-      renderDetails();
+        <div class="insight-meta">${escapeHtml(dbType)}${retry > 0 ? ` · retry ${retry}` : ""}</div>
+      `;
+      toolTimelineList.appendChild(li);
     });
+  }
 
-    toolTimeline.appendChild(card);
-  });
+  const failedCalls = calls.filter((c) => c.success === false).length;
+  const retriedCalls = calls.filter((c) => Number(c.retry || 0) > 0).length;
+  correctionList.innerHTML = "";
+  if (!failureCount && !failedCalls && !retriedCalls) {
+    correctionList.innerHTML = '<li class="insight-item muted">No corrections observed in the selected response.</li>';
+  } else {
+    const rows = [
+      `failure_count returned by agent: ${failureCount}`,
+      `failed tool calls in trace: ${failedCalls}`,
+      `retry-tagged tool calls: ${retriedCalls}`,
+    ];
+    rows.forEach((row) => {
+      const li = document.createElement("li");
+      li.className = "insight-item";
+      li.textContent = row;
+      correctionList.appendChild(li);
+    });
+  }
 
-  toolTimeline.querySelectorAll("pre code").forEach((block) => hljs.highlightElement(block));
+  const health = state.dashboard.health || {};
+  const summary = state.dashboard.summary || {};
+  runtimeMode.textContent = health.offline_mode ? "offline" : "online";
+  runtimeTools.textContent = String((health.available_db_tools || []).length || 0);
+  if (!summary.eval) {
+    evalPass.textContent = "--";
+    evalEntries.textContent = "--";
+    evalProbes.textContent = "--";
+  } else {
+    const passRate = Number(summary.eval.pass_at_1 || 0);
+    evalPass.textContent = `${Math.round(passRate * 10000) / 100}%`;
+    evalEntries.textContent = String(summary.eval.total_entries || 0);
+    evalProbes.textContent = `${summary.probes?.total_probes || 0} probes · ${summary.probes?.categories || 0} categories`;
+  }
 }
-
-// ==========================================
-// State Management
-// ==========================================
 
 function addMessage(message) {
   state.messages.push(message);
@@ -378,26 +354,22 @@ function resetChat() {
   questionInput.focus();
 }
 
-// ==========================================
-// API: Send Message
-// ==========================================
-
 async function sendMessage(prefillQuestion = null) {
   const question = (prefillQuestion ?? questionInput.value).trim();
   if (!question || state.loadingMessageId) return;
 
-  const dbHints         = getSelectedHints();
-  const timestamp       = new Date().toISOString();
-  const userMessageId   = createId("user");
+  const dbHints = getSelectedHints();
+  const timestamp = new Date().toISOString();
+  const userMessageId = createId("user");
   const loadingMessageId = createId("agent");
 
   addMessage({ id: userMessageId, role: "user", content: question, timestamp });
   addMessage({ id: loadingMessageId, role: "agent", content: "", timestamp, loading: true, expanded: false });
 
-  state.loadingMessageId  = loadingMessageId;
+  state.loadingMessageId = loadingMessageId;
   state.selectedMessageId = loadingMessageId;
   sendButton.disabled = true;
-  if (sendLabel) sendLabel.textContent = "Sending…";
+  if (sendLabel) sendLabel.textContent = "Sending...";
   questionInput.value = "";
   autoResizeTextarea();
   updateComposerMeta();
@@ -422,6 +394,7 @@ async function sendMessage(prefillQuestion = null) {
     state.selectedMessageId = loadingMessageId;
     renderMessages();
     loadHistory();
+    loadDashboardSummary();
   } catch (error) {
     updateMessage(loadingMessageId, {
       content: `I hit an API error.\n\n\`\`\`\n${error.message}\n\`\`\``,
@@ -441,30 +414,41 @@ async function sendMessage(prefillQuestion = null) {
   }
 }
 
-// ==========================================
-// API: Health & History
-// ==========================================
-
 async function checkHealth() {
   try {
     const response = await fetch("/api/health");
     if (!response.ok) throw new Error("unhealthy");
-    await response.json();
+    const payload = await response.json();
+    state.dashboard.health = payload;
     statusPill.classList.add("healthy");
     statusPill.classList.remove("unhealthy");
     statusText.textContent = "API healthy";
+    renderDashboard();
   } catch {
     statusPill.classList.add("unhealthy");
     statusPill.classList.remove("healthy");
     statusText.textContent = "API unavailable";
+    state.dashboard.health = { status: "unavailable", available_db_tools: [], offline_mode: null };
+    renderDashboard();
   }
+}
+
+async function loadDashboardSummary() {
+  try {
+    const response = await fetch("/api/dashboard_summary");
+    if (!response.ok) throw new Error("summary unavailable");
+    state.dashboard.summary = await response.json();
+  } catch {
+    state.dashboard.summary = null;
+  }
+  renderDashboard();
 }
 
 async function loadHistory() {
   try {
     const response = await fetch("/api/history");
     if (!response.ok) throw new Error("history unavailable");
-    const payload  = await response.json();
+    const payload = await response.json();
     const sessions = Array.isArray(payload.sessions) ? payload.sessions : [];
     historyList.innerHTML = "";
 
@@ -478,11 +462,11 @@ async function loadHistory() {
     }
 
     sessions.forEach((session) => {
-      const pct       = Math.round((session.confidence || 0) * 100);
+      const pct = Math.round((session.confidence || 0) * 100);
       const confClass = pct > 80 ? "high" : pct > 50 ? "medium" : "low";
-      const item      = document.createElement("article");
-      item.className  = "history-item";
-      item.innerHTML  = `
+      const item = document.createElement("article");
+      item.className = "history-item";
+      item.innerHTML = `
         <div class="history-top">
           <strong>${escapeHtml(session.question || "Untitled session")}</strong>
           <span class="history-confidence ${confClass}">${pct}%</span>
@@ -516,25 +500,6 @@ function closeHistory() {
   historyDrawer.setAttribute("aria-hidden", "true");
 }
 
-// ==========================================
-// Event Listeners
-// ==========================================
-
-traceIdButton.addEventListener("click", async () => {
-  const value = traceIdButton.textContent.trim();
-  if (!value || value === "No trace") return;
-  try {
-    await navigator.clipboard.writeText(value);
-    traceIdButton.textContent = "Copied ✓";
-    setTimeout(() => {
-      const sel = getSelectedMessage();
-      traceIdButton.textContent = sel?.result?.trace_id || "No trace";
-    }, 1400);
-  } catch {
-    // Clipboard access denied silently.
-  }
-});
-
 questionInput.addEventListener("input", () => {
   autoResizeTextarea();
   updateComposerMeta();
@@ -563,14 +528,11 @@ suggestionRow.addEventListener("click", (event) => {
   sendMessage(button.textContent.trim());
 });
 
-// ==========================================
-// Init
-// ==========================================
-
-setMobilePanel("chat");
 resetChat();
 autoResizeTextarea();
 updateComposerMeta();
 checkHealth();
 loadHistory();
+loadDashboardSummary();
 setInterval(checkHealth, 30000);
+setInterval(loadDashboardSummary, 45000);

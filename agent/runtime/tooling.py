@@ -45,7 +45,7 @@ _HINT_TO_DB_TYPE: dict[str, str] = {
 
 
 class ToolRegistry:
-    """Maps db-type hints to MCP tools from the unified 4-tool registry."""
+    """Maps db-type hints to MCP tools from the config-driven registry."""
 
     def __init__(self, mcp_client: MCPClient) -> None:
         self._client = mcp_client

@@ -37,6 +37,13 @@ def _str(key: str, default: str = "") -> str:
     return os.environ.get(key, default)
 
 
+def _str_first(keys: tuple[str, ...], default: str = "") -> str:
+    for key in keys:
+        if key in os.environ:
+            return os.environ.get(key, default)
+    return default
+
+
 def _csv_list(key: str) -> list[str]:
     raw = os.environ.get(key, "")
     return [item.strip() for item in raw.split(",") if item.strip()]
@@ -71,8 +78,14 @@ DUCKDB_BRIDGE_TIMEOUT_SECONDS: int = _int("DUCKDB_BRIDGE_TIMEOUT_SECONDS", 8)
 DUCKDB_PATH: str = _str("DUCKDB_PATH", "./data/duckdb/main.duckdb")
 
 # ---------------------------------------------------------------------------
-# OpenRouter LLM (FR-13)
+# LLM Backend (FR-13)
 # ---------------------------------------------------------------------------
+
+LLM_PROVIDER: str = _str("LLM_PROVIDER", "auto").strip().lower()
+
+OPENAI_API_KEY: str = _str_first(("OPENAI_API_KEY", "openai_api_key"), "")
+OPENAI_MODEL: str = _str("OPENAI_MODEL", "gpt-4o-mini")
+OPENAI_BASE_URL: str = _str("OPENAI_BASE_URL", "https://api.openai.com/v1")
 
 OPENROUTER_API_KEY: str = _str("OPENROUTER_API_KEY", "")
 OPENROUTER_API_KEYS: tuple[str, ...] = tuple(
@@ -157,10 +170,34 @@ OFFLINE_TOOL_LIST: list[dict] = [
         "description": "Execute read-only SQL against PostgreSQL",
     },
     {
-        "name": "query_mongodb",
+        "name": "query_mongodb_yelp_review",
         "kind": "mongodb-aggregate",
         "source": "mongo_db",
-        "description": "Execute aggregation pipeline against MongoDB",
+        "description": "Execute aggregation pipeline against MongoDB yelp_review collection",
+    },
+    {
+        "name": "query_mongodb_yelp_user",
+        "kind": "mongodb-aggregate",
+        "source": "mongo_db",
+        "description": "Execute aggregation pipeline against MongoDB yelp_user collection",
+    },
+    {
+        "name": "query_mongodb_yelp_tip",
+        "kind": "mongodb-aggregate",
+        "source": "mongo_db",
+        "description": "Execute aggregation pipeline against MongoDB yelp_tip collection",
+    },
+    {
+        "name": "query_mongodb_agnews_authors",
+        "kind": "mongodb-aggregate",
+        "source": "mongo_db",
+        "description": "Execute aggregation pipeline against MongoDB agnews_authors collection",
+    },
+    {
+        "name": "query_mongodb_agnews_article_metadata",
+        "kind": "mongodb-aggregate",
+        "source": "mongo_db",
+        "description": "Execute aggregation pipeline against MongoDB agnews_article_metadata collection",
     },
     {
         "name": "query_sqlite",

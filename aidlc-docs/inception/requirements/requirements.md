@@ -58,10 +58,26 @@ tools:
     kind: postgres-sql
     source: postgres_db
     description: "Execute read-only SQL against PostgreSQL"
-  query_mongodb:
+  query_mongodb_yelp_review:
     kind: mongodb-aggregate
     source: mongo_db
-    description: "Execute aggregation pipeline against MongoDB"
+    description: "Execute aggregation pipeline against MongoDB yelp_review collection"
+  query_mongodb_yelp_user:
+    kind: mongodb-aggregate
+    source: mongo_db
+    description: "Execute aggregation pipeline against MongoDB yelp_user collection"
+  query_mongodb_yelp_tip:
+    kind: mongodb-aggregate
+    source: mongo_db
+    description: "Execute aggregation pipeline against MongoDB yelp_tip collection"
+  query_mongodb_agnews_authors:
+    kind: mongodb-aggregate
+    source: mongo_db
+    description: "Execute aggregation pipeline against MongoDB agnews_authors collection"
+  query_mongodb_agnews_article_metadata:
+    kind: mongodb-aggregate
+    source: mongo_db
+    description: "Execute aggregation pipeline against MongoDB agnews_article_metadata collection"
   query_sqlite:
     kind: sqlite-sql
     source: sqlite_db
@@ -75,9 +91,9 @@ tools:
 This means: when challenge reviewers examine `tools.yaml`, they see a 4-DB MCP configuration. Google MCP Toolbox handles the first 3 tools; the DuckDB entry is declared in the same config file but is backed by the custom bridge.
 
 **Unified Interface** (`agent/data_agent/mcp_toolbox_client.py`):
-- `MCPClient` reads `tools.yaml` at init to build its authoritative 4-tool registry
+- `MCPClient` reads `tools.yaml` at init to build its authoritative tool registry
 - Exposes one public class `MCPClient` with two methods: `discover_tools() → list[ToolDescriptor]` and `invoke_tool(tool_name, params) → InvokeResult`
-- `discover_tools()` returns the full 4-tool list from the registry (loaded from `tools.yaml`); no backend is queried just to discover tools
+- `discover_tools()` returns the full configured tool list from the registry (loaded from `tools.yaml`); no backend is queried just to discover tools
 - `invoke_tool()` inspects the tool's `kind` field: standard kinds (`postgres-sql`, `mongodb-aggregate`, `sqlite-sql`) → dispatch to Google MCP Toolbox at `MCP_TOOLBOX_URL`; `duckdb_bridge_sql` → dispatch to `DuckDBBridgeClient` — this routing is invisible to callers
 - When `AGENT_OFFLINE_MODE=1` or `AGENT_USE_MCP=0`: returns a merged stub tool list + stub results covering all 4 DB types; no HTTP calls made
 
@@ -93,7 +109,7 @@ This means: when challenge reviewers examine `tools.yaml`, they see a 4-DB MCP c
 **Dispatch rule** (internal to `MCPClient`, invisible upstream):
 - `kind` in `{postgres-sql, mongodb-aggregate, sqlite-sql}` → Google MCP Toolbox
 - `kind == duckdb_bridge_sql` → `DuckDBBridgeClient`
-- `ToolRegistry` and all upstream code see one flat list of 4 tools, sourced from `tools.yaml`
+- `ToolRegistry` and all upstream code see one flat list of configured tools, sourced from `tools.yaml`
 
 ### FR-03b: DuckDB MCP Bridge Contract (Internal to MCPClient)
 The custom DuckDB bridge is an implementation detail of `DuckDBBridgeClient` inside `duckdb_bridge_client.py`. The contract below is the bridge server's wire protocol — only `DuckDBBridgeClient` speaks it. No other module references `DUCKDB_BRIDGE_URL` or sends requests to the bridge directly.
@@ -301,7 +317,7 @@ Events from DuckDB bridge calls include `"backend": "duckdb_bridge"` to distingu
 |---|---|---|
 | Language | Python 3.11+ | |
 | LLM Backend | OpenRouter API | Model configurable via `OPENROUTER_MODEL` env var; default `google/gemini-2.0-flash-001` |
-| MCP Config | `tools.yaml` | Single MCP configuration declaring all 4 DB tools; read by `MCPClient` at init |
+| MCP Config | `tools.yaml` | Single MCP configuration declaring tool entries for all 4 DB types; read by `MCPClient` at init |
 | DB Backend (3 DBs) | Google MCP Toolbox | Handles `postgres-sql`, `mongodb-aggregate`, `sqlite-sql` kinds via `MCP_TOOLBOX_URL` |
 | DB Backend (DuckDB) | Custom DuckDB MCP Bridge | Handles `duckdb_bridge_sql` kind via `DUCKDB_BRIDGE_URL`; read-only; path-restricted |
 | Memory | File-based | `.oracle_forge_memory/` directory |
@@ -321,7 +337,7 @@ Events from DuckDB bridge calls include `"backend": "duckdb_bridge"` to distingu
 | `DUCKDB_BRIDGE_URL` | URL of the custom DuckDB MCP bridge server | `http://localhost:5001` |
 | `DUCKDB_BRIDGE_TIMEOUT_SECONDS` | Per-request timeout for DuckDB bridge calls | `8` (same as `MCP_TIMEOUT_SECONDS`) |
 | `DUCKDB_PATH` | Absolute path to the DuckDB file (enforced by bridge; declared in `tools.yaml`) | `./data/duckdb/main.duckdb` |
-| `TOOLS_YAML_PATH` | Path to `tools.yaml`; read by `MCPClient` at init to build 4-DB tool registry | `./tools.yaml` |
+| `TOOLS_YAML_PATH` | Path to `tools.yaml`; read by `MCPClient` at init to build the configured tool registry (covering 4 DB types) | `./tools.yaml` |
 
 ---
 

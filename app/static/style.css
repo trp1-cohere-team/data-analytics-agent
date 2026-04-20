@@ -257,6 +257,9 @@ code { font-family: "JetBrains Mono", "Fira Code", monospace; }
   flex: 1;
   min-height: 0;
 }
+.dashboard.dashboard-chat-only {
+  grid-template-columns: minmax(0, 1fr);
+}
 
 .chat-column,
 .details-column {
@@ -761,6 +764,109 @@ code { font-family: "JetBrains Mono", "Fira Code", monospace; }
 .hidden { display: none !important; }
 
 /* ==========================================
+   Capabilities panel (Agent tools inventory)
+   ========================================== */
+.capabilities-card {
+  margin: 15px 15px 0;
+  padding: 14px 15px 12px;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.capabilities-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.capabilities-label {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.capabilities-count {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.capabilities-subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.capabilities-list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.capability-item {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--r) - 4px);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.capability-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.capability-name {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.capability-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: lowercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  background: var(--panel-alt);
+  white-space: nowrap;
+}
+
+.capability-badge[data-backend="postgresql"] { color: #60a5fa; border-color: rgba(96,165,250,0.35); }
+.capability-badge[data-backend="mongodb"]    { color: #4ade80; border-color: rgba(74,222,128,0.35); }
+.capability-badge[data-backend="duckdb"]     { color: #fbbf24; border-color: rgba(251,191,36,0.35); }
+.capability-badge[data-backend="sqlite"]     { color: #c084fc; border-color: rgba(192,132,252,0.35); }
+
+.capability-desc {
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+/* ==========================================
    Metric Cards
    ========================================== */
 .metric-card {
@@ -791,6 +897,63 @@ code { font-family: "JetBrains Mono", "Fira Code", monospace; }
   color: var(--muted);
   font-size: 0.81rem;
   font-weight: 500;
+}
+
+.insight-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.insight-item {
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--panel);
+  padding: 8px 10px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.insight-item.muted {
+  color: var(--muted);
+  background: var(--panel-alt);
+}
+
+.insight-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.insight-meta {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.insight-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  border-radius: var(--r-pill);
+  padding: 2px 7px;
+  border: 1px solid var(--border);
+  text-transform: uppercase;
+}
+
+.insight-badge.ok {
+  color: var(--green);
+  border-color: rgba(18, 156, 99, 0.35);
+  background: var(--green-soft);
+}
+
+.insight-badge.failed {
+  color: var(--red);
+  border-color: rgba(209, 67, 67, 0.35);
+  background: var(--red-soft);
 }
 
 .confidence-pct {
@@ -1150,15 +1313,15 @@ a { color: var(--accent-strong); }
   .topbar { flex-wrap: wrap; gap: 10px; padding: 12px 0 10px; }
   .topbar-actions { gap: 6px; }
 
-  .mobile-tabs { display: flex; }
+  .mobile-tabs { display: none; }
 
-  .dashboard { gap: 0; }
+  .dashboard {
+    gap: 10px;
+    grid-template-columns: 1fr;
+  }
 
   .chat-column,
-  .details-column { display: none; }
-
-  .chat-column.mobile-active,
-  .details-column.mobile-active { display: flex; }
+  .details-column { display: flex; }
 
   .panel { border-radius: var(--r); }
 

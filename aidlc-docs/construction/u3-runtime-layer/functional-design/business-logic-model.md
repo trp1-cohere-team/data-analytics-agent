@@ -60,7 +60,7 @@ U3 is the orchestration spine: persistent memory for cross-session knowledge, to
 ## Module: tooling.py — ToolRegistry + ToolPolicy (FR-03, SEC-05, SEC-11)
 
 ### Responsibilities
-- `ToolRegistry`: db_type hint → tool selection from MCPClient's 4-tool list
+- `ToolRegistry`: db_type hint → tool selection from MCPClient's config-driven tool list
 - `ToolPolicy`: mutation guard, payload size cap — security barrier before tool invocation
 
 ### Public API

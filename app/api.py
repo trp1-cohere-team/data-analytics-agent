@@ -12,13 +12,17 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from agent.data_agent.config import AGENT_RUNTIME_EVENTS_PATH, TOOLS_YAML_PATH
+from agent.data_agent.config import AGENT_OFFLINE_MODE, AGENT_RUNTIME_EVENTS_PATH, TOOLS_YAML_PATH
 from agent.data_agent.oracle_forge_agent import run_agent
 
 ROOT = Path(__file__).resolve().parent.parent
 STATIC_DIR = ROOT / "app" / "static"
 EVENTS_PATH = ROOT / AGENT_RUNTIME_EVENTS_PATH
 TOOLS_PATH = ROOT / TOOLS_YAML_PATH
+RESULTS_DIR = ROOT / "results"
+PROBES_PATH = ROOT / "probes" / "probes.md"
+SCORE_PROGRESSION_PATH = RESULTS_DIR / "score_progression.jsonl"
+BENCHMARK_RESULTS_PATH = RESULTS_DIR / "dab_benchmark_5trials.json"
 SUPPORTED_HINTS = ("sqlite", "duckdb", "postgresql", "mongodb")
 
 
@@ -111,6 +115,71 @@ def _load_history(limit: int = 50) -> list[dict[str, Any]]:
     return history[:limit]
 
 
+def _load_eval_summary() -> dict[str, Any]:
+    summary = {
+        "pass_at_1": 0.0,
+        "total_entries": 0,
+        "passed_entries": 0,
+        "avg_confidence": 0.0,
+        "latest_scored_at": "",
+    }
+
+    if BENCHMARK_RESULTS_PATH.is_file():
+        try:
+            payload = json.loads(BENCHMARK_RESULTS_PATH.read_text(encoding="utf-8"))
+            if isinstance(payload, list):
+                total = len(payload)
+                passed = sum(1 for row in payload if isinstance(row, dict) and row.get("pass"))
+                confidences = [
+                    float(row.get("confidence", 0.0))
+                    for row in payload
+                    if isinstance(row, dict) and row.get("confidence") is not None
+                ]
+                summary["total_entries"] = total
+                summary["passed_entries"] = passed
+                summary["pass_at_1"] = round(passed / total, 4) if total else 0.0
+                summary["avg_confidence"] = round(sum(confidences) / len(confidences), 4) if confidences else 0.0
+        except (OSError, json.JSONDecodeError, ValueError, TypeError):
+            pass
+
+    if SCORE_PROGRESSION_PATH.is_file():
+        try:
+            latest: dict[str, Any] | None = None
+            with SCORE_PROGRESSION_PATH.open("r", encoding="utf-8") as handle:
+                for line in handle:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    row = json.loads(line)
+                    if isinstance(row, dict):
+                        latest = row
+            if latest:
+                summary["latest_scored_at"] = str(latest.get("timestamp_utc", ""))
+                if latest.get("pass_at_1") is not None:
+                    summary["pass_at_1"] = float(latest.get("pass_at_1") or summary["pass_at_1"])
+        except (OSError, json.JSONDecodeError, ValueError, TypeError):
+            pass
+
+    return summary
+
+
+def _load_probe_summary() -> dict[str, Any]:
+    summary = {"total_probes": 0, "categories": 0}
+    if not PROBES_PATH.is_file():
+        return summary
+
+    try:
+        text = PROBES_PATH.read_text(encoding="utf-8")
+    except OSError:
+        return summary
+
+    summary["total_probes"] = sum(1 for line in text.splitlines() if line.startswith("### Probe "))
+    summary["categories"] = sum(
+        1 for line in text.splitlines() if line.startswith("## Category ")
+    )
+    return summary
+
+
 @app.post("/api/chat")
 def chat(payload: ChatRequest) -> JSONResponse:
     result = run_agent(payload.question, payload.db_hints)
@@ -123,6 +192,7 @@ def health() -> dict[str, Any]:
         "status": "ok",
         "service": "oracleforge-data-agent",
         "port": 8501,
+        "offline_mode": AGENT_OFFLINE_MODE,
         "available_db_tools": _load_available_tools(),
         "supported_db_hints": list(SUPPORTED_HINTS),
         "history_path": str(EVENTS_PATH),
@@ -132,6 +202,14 @@ def health() -> dict[str, Any]:
 @app.get("/api/history")
 def history() -> dict[str, Any]:
     return {"sessions": _load_history(limit=50)}
+
+
+@app.get("/api/dashboard_summary")
+def dashboard_summary() -> dict[str, Any]:
+    return {
+        "eval": _load_eval_summary(),
+        "probes": _load_probe_summary(),
+    }
 
 
 @app.get("/")

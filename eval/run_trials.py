@@ -129,6 +129,16 @@ def _load_available_databases(dataset: str) -> list[dict]:
     return items
 
 
+# Table names whose natural DAB names case-insensitively collide with other
+# loaded base tables (e.g. a ``Lead`` table clashes with the ``LEAD`` stock
+# ticker in DuckDB). For those we cannot create a view, so we tell the agent
+# to use the prefixed name directly.
+_COLLIDING_TABLE_OVERRIDES: dict[str, dict[str, str]] = {
+    "crmarenapro": {"Lead": "crm_Lead"},
+    "yelp": {"tip": "yelp_tip"},
+}
+
+
 def _load_dataset_description(dataset: str) -> tuple[str, str]:
     """Return (db_description, hints) for the dataset, or ("", "") on miss."""
     base = DAB_ROOT / f"query_{dataset}"
@@ -149,6 +159,17 @@ def _load_dataset_description(dataset: str) -> tuple[str, str]:
             hints = re.sub(r"^\s*HINTS\s*:\s*", "", raw, flags=re.IGNORECASE).strip()
     except OSError as exc:
         logger.warning("Could not read %s: %s", hint_path, exc)
+
+    overrides = _COLLIDING_TABLE_OVERRIDES.get(dataset)
+    if overrides and description:
+        lines = [
+            f"- `{orig}` (as named in the description above) is stored as `{prefixed}`; "
+            f"query `{prefixed}` directly."
+            for orig, prefixed in overrides.items()
+        ]
+        description += (
+            "\n\nLOCAL ENVIRONMENT NOTES (read carefully):\n" + "\n".join(lines)
+        )
     return description, hints
 
 

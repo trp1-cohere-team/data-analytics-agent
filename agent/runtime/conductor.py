@@ -241,7 +241,9 @@ class OracleForgeConductor:
             outcome="success" if bool(agent_md) else "missing",
         )
         kb_results = load_layered_kb_context(question)
-        kb_text = "\n\n".join(content for content, _score in kb_results[:5])
+        # Cap each doc at 4KB so a ballooning corrections_log doesn't inflate
+        # every LLM call's input tokens (observed ~350K-token corrections_log).
+        kb_text = "\n\n".join(content[:4000] for content, _score in kb_results[:5])
 
         # In eval mode every question is independent — cross-session topic
         # summaries from the persistent memory store would leak answers
@@ -1797,8 +1799,30 @@ class OracleForgeConductor:
             return tool_name, {"sql": rewritten}
         return None
 
-    @staticmethod
-    def _recover_db_type(tool_name: str, params: dict, error: str, context: dict) -> Optional[tuple[str, dict]]:
+    def _resolve_mongodb_tool(self, collection: str = "") -> Optional[str]:
+        """Resolve the active MongoDB tool name from the registry.
+
+        Supports both legacy ``query_mongodb`` and collection-scoped
+        tools such as ``query_mongodb_yelp_review``.
+        """
+        mongo_tools = [
+            t.name
+            for t in self._registry.get_tools()
+            if "mongo" in t.name.lower()
+        ]
+        if not mongo_tools:
+            return None
+        if "query_mongodb" in mongo_tools:
+            return "query_mongodb"
+
+        wanted = str(collection or "").strip().lower()
+        if wanted:
+            for name in mongo_tools:
+                if wanted in name.lower():
+                    return name
+        return mongo_tools[0]
+
+    def _recover_db_type(self, tool_name: str, params: dict, error: str, context: dict) -> Optional[tuple[str, dict]]:
         """Deterministic DB rerouting recovery for dialect/backend mismatches."""
         lowered = str(error or "").lower()
         sql = params.get("sql")
@@ -1809,8 +1833,8 @@ class OracleForgeConductor:
             "sqlite": "query_sqlite",
             "postgres": "query_postgresql",
             "postgresql": "query_postgresql",
-            "mongo": "query_mongodb",
-            "mongodb": "query_mongodb",
+            "mongo": "mongodb",
+            "mongodb": "mongodb",
         }
         target = ""
         for key, mapped in direct_map.items():
@@ -1833,19 +1857,19 @@ class OracleForgeConductor:
             else:
                 return None
 
-        if target == "query_mongodb":
+        if target == "mongodb":
             collection = params.get("collection")
             pipeline = params.get("pipeline")
-            if collection and pipeline:
-                return target, {"collection": collection, "pipeline": pipeline}
+            mongo_tool = self._resolve_mongodb_tool(str(collection or ""))
+            if mongo_tool and collection and pipeline:
+                return mongo_tool, {"collection": collection, "pipeline": pipeline}
             return None
 
         if not sql_payload:
             return None
         return target, {"sql": sql}
 
-    @staticmethod
-    def _recover_data_quality(tool_name: str, params: dict) -> Optional[tuple[str, dict]]:
+    def _recover_data_quality(self, tool_name: str, params: dict) -> Optional[tuple[str, dict]]:
         """Deterministic data-quality recovery by probing row counts/sample size."""
         if tool_name in {"query_sqlite", "query_duckdb", "query_postgresql"}:
             sql = params.get("sql")
@@ -1855,7 +1879,7 @@ class OracleForgeConductor:
             probe = f'SELECT COUNT(*) AS row_count FROM ({inner}) AS _probe'
             return tool_name, {"sql": probe}
 
-        if tool_name == "query_mongodb":
+        if "mongo" in str(tool_name).lower():
             collection = params.get("collection")
             if not isinstance(collection, str) or not collection.strip():
                 return None
@@ -1867,7 +1891,8 @@ class OracleForgeConductor:
             if not isinstance(parsed, list):
                 parsed = []
             parsed = parsed + [{"$limit": 5}]
-            return tool_name, {"collection": collection, "pipeline": json.dumps(parsed)}
+            resolved_tool = self._resolve_mongodb_tool(collection) or tool_name
+            return resolved_tool, {"collection": collection, "pipeline": json.dumps(parsed)}
 
         return None
 
@@ -2094,9 +2119,11 @@ class OracleForgeConductor:
                     "- Do NOT paste raw Python lists/dicts or JSON into the answer.\n"
                     "- Do NOT describe tool calls, retries, or your reasoning.\n"
                     "- Do NOT repeat the user's question back.\n"
+                    "- Do NOT emit code fences (```), comments (# ...), or tool_code blocks.\n"
+                    "- If the ground-truth shape is a tuple/row, format as comma-separated values.\n"
                     "- If results are empty or contradictory, say so in one sentence.\n"
                     "- If the question is ambiguous, ask one short clarifying question.\n"
-                    "Respond with: ANSWER: <your answer>"
+                    "Respond with exactly one line starting with: ANSWER: <your answer>"
                 ),
             })
         elif evidence:
@@ -2115,6 +2142,13 @@ class OracleForgeConductor:
                     "- Do not repeat an identical successful tool call.\n"
                     "- If the DATASET CONTEXT names the tables, query them directly "
                     "instead of running information_schema or list_tables again.\n"
+                    "- If the question asks for an AVERAGE, RATIO, PERCENTAGE, COUNT, RANK, "
+                    "CHI-SQUARE, MOVING AVERAGE, or any statistic, compute it IN the SQL "
+                    "(use AVG/SUM/COUNT/GROUP BY/CTEs/window functions). Do NOT return raw "
+                    "rows and then guess — the ANSWER must be the computed value.\n"
+                    "- The ANSWER must be the final value(s), not 'Found N results' or the "
+                    "first 5 rows.\n"
+                    "- No code fences (```), no Python dict/list dumps, no plan comments in the ANSWER.\n"
                     "- If the question spans multiple DB types, issue a separate TOOL_CALL "
                     "per DB and combine results in the final ANSWER."
                 ),
@@ -2132,14 +2166,32 @@ class OracleForgeConductor:
                 ),
             })
 
-        try:
-            return post_chat_completions(messages=messages, logger=logger)
-        except requests.Timeout:
-            logger.warning("LLM call timed out")
-            return {"choices": [{"message": {"content": "LLM call timed out. Returning best available answer."}}]}
-        except requests.RequestException as exc:
-            logger.warning("LLM call failed: %s", exc)
-            return {"choices": [{"message": {"content": f"LLM call failed. Returning best available answer."}}]}
+        import time as _time
+        # Retry transient upstream failures (429/503/504) with exponential backoff.
+        # Non-transient errors (auth/model/payload) still short-circuit to the
+        # fallback answer so a bad request doesn't block the trial.
+        _TRANSIENT = {429, 503, 504}
+        _backoffs = (2.0, 5.0, 12.0)
+        for attempt, delay in enumerate((0.0,) + _backoffs):
+            if delay:
+                _time.sleep(delay)
+            try:
+                return post_chat_completions(messages=messages, logger=logger)
+            except requests.Timeout:
+                logger.warning("LLM call timed out (attempt %d)", attempt + 1)
+                continue
+            except requests.RequestException as exc:
+                status = getattr(getattr(exc, "response", None), "status_code", None)
+                if status in _TRANSIENT and attempt < len(_backoffs):
+                    logger.warning(
+                        "LLM call transient %s (attempt %d/%d) — backing off %.1fs",
+                        status, attempt + 1, len(_backoffs) + 1, _backoffs[attempt],
+                    )
+                    continue
+                logger.warning("LLM call failed: %s", exc)
+                return {"choices": [{"message": {"content": "LLM call failed. Returning best available answer."}}]}
+        logger.warning("LLM call exhausted %d retries", len(_backoffs) + 1)
+        return {"choices": [{"message": {"content": "LLM call timed out. Returning best available answer."}}]}
 
     # ------------------------------------------------------------------
     # Response parsing helpers
@@ -2173,10 +2225,35 @@ class OracleForgeConductor:
                 if markers:
                     content = content[markers[-1].end():].strip()
                 content = OracleForgeConductor._strip_markdown_fence(content)
+                content = OracleForgeConductor._scrub_leaked_llm_output(content)
                 return content
         except (IndexError, AttributeError, TypeError):
             pass
         return ""
+
+    @staticmethod
+    def _scrub_leaked_llm_output(text: str) -> str:
+        """Remove obvious plan/code-block leaks when ANSWER: marker was absent.
+
+        Observed failure modes this handles:
+        - response begins with ```tool_code ...``` or ```python ...``` — strip the fence
+        - response begins with "# Overall plan:" or "# The user is asking" comments
+        - response is a raw Python dict/list dump like "{'article_id': 1}, {'article_id': 2}"
+        """
+        if not text:
+            return text
+        # Strip any code fences anywhere in the string (not just surrounding).
+        text = re.sub(r"```[a-zA-Z_]*\s*\n?", "", text)
+        text = text.replace("```", "").strip()
+        # Drop leading comment-style plan lines
+        lines = text.splitlines()
+        while lines and lines[0].lstrip().startswith("#"):
+            lines.pop(0)
+        text = "\n".join(lines).strip()
+        # If content is mostly a Python dict/list dump with no prose, collapse to a note
+        if text.startswith(("{", "[", "}, {", "], [")) and len(text) > 400:
+            return "The query returned raw rows without an aggregated answer."
+        return text
 
     @staticmethod
     def _extract_tool_call(response: dict) -> Optional[dict]:

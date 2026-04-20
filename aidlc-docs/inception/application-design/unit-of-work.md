@@ -39,25 +39,25 @@ Single-service monorepo with 5 logically-ordered development units. Units are or
 | `agent/data_agent/knowledge_base.py` | Public | Load kb/ subdirs; keyword retrieval; freshness-weighted ranking |
 | `agent/data_agent/context_layering.py` | Public | 6-layer context packet; precedence composition; backward-compat aliases |
 | `agent/data_agent/failure_diagnostics.py` | Public | 4-category failure classifier (`query`/`join-key`/`db-type`/`data-quality`) |
-| `agent/data_agent/mcp_toolbox_client.py` | **Public facade** | `MCPClient` — reads `tools.yaml` at init to build 4-DB tool registry; `discover_tools()` returns all 4 tools; `invoke_tool()` dispatches by `kind` field — invisible to callers |
+| `agent/data_agent/mcp_toolbox_client.py` | **Public facade** | `MCPClient` — reads `tools.yaml` at init to build the configured tool registry (covering 4 DB types); `discover_tools()` returns all configured tools; `invoke_tool()` dispatches by `kind` field — invisible to callers |
 | `agent/data_agent/duckdb_bridge_client.py` | **Private impl** | `DuckDBBridgeClient` — speaks the DuckDB bridge wire protocol (`kind: duckdb_bridge_sql`); imported **only** by `mcp_toolbox_client.py`; never imported elsewhere |
 
 **Unified DB Client Design**:
 
 ```
-tools.yaml  <-- single MCP config; all 4 DB tools declared here
+tools.yaml  <-- single MCP config; tool entries for all 4 DB types declared here
   (postgres-sql / mongodb-aggregate / sqlite-sql / duckdb_bridge_sql)
         |
         | loaded at init
         v
 Upstream (ToolRegistry, conductor, planner, synthesizer)
          |
-         | imports MCPClient only; sees 4-tool flat list
+         | imports MCPClient only; sees config-driven flat tool list
          v
   mcp_toolbox_client.py   <-- single public entry point
   +--------------------------------------------+
   | MCPClient                                  |
-  |  discover_tools()  <-- returns 4 tools     |
+  |  discover_tools()  <-- returns configured tools |
   |  invoke_tool(name) --> dispatch by kind:   |
   |    postgres/mongo/sqlite  --> MCP Toolbox  |
   |    duckdb_bridge_sql      --> private below|
@@ -79,10 +79,10 @@ Upstream (ToolRegistry, conductor, planner, synthesizer)
 **Acceptance Criteria**:
 - `build_context_packet()` composes all 6 layers; Layer 6 overrides Layer 1
 - `failure_diagnostics.classify()` always returns one of the 4 valid categories (PBT-03 invariant)
-- `MCPClient` loads `tools.yaml` at init; `discover_tools()` returns all 4 DB tools from the registry without querying any live backend
+- `MCPClient` loads `tools.yaml` at init; `discover_tools()` returns all configured DB tools from the registry without querying any live backend
 - `MCPClient.invoke_tool()` dispatches internally by `kind`; callers never reference `DuckDBBridgeClient` directly
 - `duckdb_bridge_client.py` has zero imports from outside U2 (self-contained DuckDB protocol)
-- Offline stubs in `config.py` provide the same 4-tool flat list from `tools.yaml` format; no HTTP calls made
+- Offline stubs in `config.py` provide the same config-driven flat list as `tools.yaml`; no HTTP calls made
 - `tools.yaml` satisfies challenge requirement: single MCP config file covering all 4 DB types
 - `python3 -m unittest tests/test_context_layering.py tests/test_failure_diagnostics.py` passes
 

@@ -174,7 +174,7 @@ Layer 6 (user_question) content always appears before Layer 1 (table_usage) in a
 ## Module: mcp_toolbox_client.py — Unified MCPClient Facade (FR-03)
 
 ### Responsibilities
-- Read `tools.yaml` at init to build the 4-tool registry
+- Read `tools.yaml` at init to build the tool registry
 - Single public interface: `discover_tools()` + `invoke_tool()`
 - Internal dispatch by `kind` field — invisible to callers
 - Standard kinds → Google MCP Toolbox; `duckdb_bridge_sql` → DuckDBBridgeClient
@@ -184,13 +184,13 @@ Layer 6 (user_question) content always appears before Layer 1 (table_usage) in a
 
 **`MCPClient`** class:
 - `__init__(self)` — loads tools.yaml, builds registry, creates DuckDBBridgeClient instance
-- `discover_tools(self) -> list[ToolDescriptor]` — returns all 4 tools from registry
+- `discover_tools(self) -> list[ToolDescriptor]` — returns all configured tools from registry
 - `invoke_tool(self, tool_name: str, params: dict) -> InvokeResult` — dispatches by kind
 
 ### Algorithm: __init__
 ```
 1. If AGENT_OFFLINE_MODE or not AGENT_USE_MCP:
-   a. Build registry from OFFLINE_TOOL_LIST (4 tools)
+   a. Build registry from OFFLINE_TOOL_LIST (configured tools)
    b. Create DuckDBBridgeClient() (will also use offline stubs)
    c. Return
 2. Load tools.yaml from TOOLS_YAML_PATH
@@ -203,7 +203,7 @@ Layer 6 (user_question) content always appears before Layer 1 (table_usage) in a
 
 ### Algorithm: discover_tools
 ```
-1. Return list(_registry.values()) — all 4 tools, no backend queried
+1. Return list(_registry.values()) — all configured tools, no backend queried
 ```
 
 ### Algorithm: invoke_tool

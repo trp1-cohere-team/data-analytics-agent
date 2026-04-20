@@ -119,7 +119,7 @@ flowchart TD
 | Stock prices, OHLCV, volume, Adj Close | `query_duckdb` | DuckDB | One table per ticker (e.g. `AAPL`, `MSFT`) |
 | Stock metadata, company names, exchange | `query_sqlite` | SQLite | `stockinfo` |
 | Retail, CRM, and other DAB datasets | `query_postgresql` | PostgreSQL | DAB-loaded tables |
-| Document-store DAB datasets | `query_mongodb` | MongoDB | DAB collections |
+| Document-store DAB datasets | `query_mongodb_*` | MongoDB | DAB collections |
 
 ### Operational Modes
 
@@ -167,7 +167,8 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 4. Set required environment variables in `.env`.
-   - At minimum, set your LLM key (for example `OPENAI_API_KEY`) when running in online mode.
+   - At minimum, set your LLM key (for example `OPENAI_API_KEY`; lowercase `openai_api_key` is also accepted) when running in online mode.
+   - Optional: set `LLM_PROVIDER=openai` to force direct OpenAI routing, or keep `LLM_PROVIDER=auto` (default).
    - For deterministic local checks without API calls, set `AGENT_OFFLINE_MODE=1`.
 5. Start local infra stack.
 ```bash

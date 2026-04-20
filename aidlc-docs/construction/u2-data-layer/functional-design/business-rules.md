@@ -4,14 +4,14 @@
 
 ## BR-U2-01: Unified Tool Interface
 **Rule**: All upstream components (ToolRegistry, conductor, planner, synthesizer) interact with `MCPClient` ONLY. No upstream component imports `DuckDBBridgeClient` or `duckdb_bridge_client.py`.
-- `discover_tools()` returns a flat 4-tool list; callers cannot distinguish which backend serves which tool
+- `discover_tools()` returns a flat config-driven tool list; callers cannot distinguish which backend serves which tool
 - `invoke_tool()` dispatches internally by `kind` — the routing is invisible to callers
 - **Enforcement**: Import rule in unit-of-work-dependency.md
 
 ---
 
 ## BR-U2-02: tools.yaml as Single Source of Truth
-**Rule**: `MCPClient` reads `tools.yaml` at init to build its 4-tool registry. The registry is NOT hardcoded — it is derived from the YAML file.
+**Rule**: `MCPClient` reads `tools.yaml` at init to build its tool registry. The registry is NOT hardcoded — it is derived from the YAML file.
 - In offline mode, the registry is built from `OFFLINE_TOOL_LIST` (which mirrors tools.yaml structure)
 - No tool is added or removed at runtime — the registry is immutable after init
 - **Enforcement**: FR-03

@@ -16,13 +16,18 @@ This directory stores evaluation outputs, debug trial artifacts, and submission 
 | Iteration | Pass@1 | Trials passed | Notes |
 |---|---:|---:|---|
 | Initial submission | 14.07% | 38/270 | No schema-aliasing fix; many datasets at 0% |
-| + view fix (partial rerun) | **15.19%** | **41/270** | Views expose DAB names over prefixed tables; bookreview 0→5, crmarenapro 0→2 |
+| + view fix (partial rerun) | 15.19% | 41/270 | Views expose DAB names over prefixed tables; bookreview 0→5, crmarenapro 0→2 |
+| + round-2 agent improvements (2026-04-20) | **28.15%** | **76/270** | 429/503/504 backoff in `_call_llm`; 4 KB cap on KB docs (corrections_log no longer inflates prompts ~70×); `_scrub_leaked_llm_output` strips code fences / plan comments / raw dict dumps; evidence-mode prompt requires in-SQL computation; added `kb/domain/{pancancer,patents,agnews}-patterns.md`. |
 
-The rerun was capped at 136/205 intended trials by OpenRouter weekly-credit
-exhaustion across the two configured keys. Further improvements tracked as a
-follow-up: (1) load `support.sql` / `books_info` / MongoDB tables that the
-current load scripts skipped; (2) improve answer extraction so tool-call
-results map cleanly to the ground truth format.
+Per-dataset pass@1 at 28.15% snapshot:
+stockmarket 25/25 · stockindex 10/15 · googlelocal 9/20 · music_brainz_20k 5/15 ·
+bookreview 5/15 · GITHUB_REPOS 6/20 · DEPS_DEV_V1 2/10 · crmarenapro 9/65 ·
+yelp 4/35 · PATENTS 1/15 · PANCANCER_ATLAS 0/15 · agnews 0/20.
+
+Remaining failures on PANCANCER_ATLAS and agnews are analytical-reasoning limits
+(in-SQL chi-square; text-based LLM classification) rather than schema gaps, so
+KB docs alone did not move them — follow-up work is specialised solver pipelines
+or a stronger reasoning model.
 
 ## Key Files
 - `dab_benchmark_5trials.json`: Full 5-trial benchmark output.

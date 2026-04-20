@@ -84,7 +84,11 @@ All 4 databases are accessed through the unified MCPClient interface:
 | Tool Name | Database Type | Backend |
 |-----------|--------------|---------|
 | query_postgresql | PostgreSQL | Google MCP Toolbox |
-| query_mongodb | MongoDB | Google MCP Toolbox |
+| query_mongodb_yelp_review | MongoDB | Google MCP Toolbox |
+| query_mongodb_yelp_user | MongoDB | Google MCP Toolbox |
+| query_mongodb_yelp_tip | MongoDB | Google MCP Toolbox |
+| query_mongodb_agnews_authors | MongoDB | Google MCP Toolbox |
+| query_mongodb_agnews_article_metadata | MongoDB | Google MCP Toolbox |
 | query_sqlite | SQLite | Google MCP Toolbox |
 | query_duckdb | DuckDB | Custom DuckDB MCP Bridge |
 
@@ -113,7 +117,7 @@ The DuckDB tool connects to a dedicated bridge server. All tools are read-only.
 | Stock metadata (company names, exchange, ETF flag, financial status, market category) | `query_sqlite` | `stockinfo` — columns: Symbol, "Company Description", "Listing Exchange", ETF, "Financial Status", "Nasdaq Traded", "Market Category" |
 | Multi-step stock queries (metadata + prices) | `query_sqlite` first for symbols, then `query_duckdb` for price data | Join on Symbol ↔ table name |
 | PostgreSQL datasets (retail, CRM, etc.) | `query_postgresql` | Only use for non-stock DAB datasets |
-| MongoDB datasets | `query_mongodb` | Only use for document-store DAB datasets |
+| MongoDB datasets | `query_mongodb_*` | Use the collection-scoped MongoDB tool that matches the target collection |
 
 ### Quick routing rules
 - Question mentions NASDAQ, NYSE, stock, ETF, trading volume, closing price, intraday → **sqlite + duckdb**
@@ -128,7 +132,7 @@ The DuckDB tool connects to a dedicated bridge server. All tools are read-only.
 ## Tool Scoping and Connection Declarations
 
 ### Why These Tools Are Scoped This Way
-- `query_postgresql`, `query_mongodb`, and `query_sqlite` route through Google MCP Toolbox for a single operational control plane.
+- `query_postgresql`, `query_mongodb_*`, and `query_sqlite` route through Google MCP Toolbox for a single operational control plane.
 - `query_duckdb` routes to the DuckDB bridge because DuckDB is not exposed by the toolbox in this deployment.
 - Tool names are flat and explicit so new team members can map a db hint directly to one query tool.
 
@@ -154,7 +158,7 @@ When you need to call a tool, respond with EXACTLY this format and NOTHING else:
 TOOL_CALL: {"tool": "<tool_name>", "parameters": {"sql": "<your SQL here>"}}
 ```
 
-Valid tool names: `query_sqlite`, `query_duckdb`, `query_postgresql`, `query_mongodb`
+Valid tool names: `query_sqlite`, `query_duckdb`, `query_postgresql`, `query_mongodb_yelp_review`, `query_mongodb_yelp_user`, `query_mongodb_yelp_tip`, `query_mongodb_agnews_authors`, `query_mongodb_agnews_article_metadata`
 
 When you have enough evidence and are ready to give the final answer, respond with:
 

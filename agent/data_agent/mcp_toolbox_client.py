@@ -1,7 +1,7 @@
-"""Unified MCP client facade for all 4 database types.
+"""Unified MCP client facade for all supported database tools.
 
 FR-03: Single public entry point. Reads tools.yaml at init to build
-the 4-tool registry.  Dispatches by ``kind`` field:
+the config-driven tool registry. Dispatches by ``kind`` field:
   - postgres-sql / mongodb-aggregate / sqlite-sql → Google MCP Toolbox
   - duckdb_bridge_sql → DuckDBBridgeClient (private)
 
@@ -42,9 +42,9 @@ _BRIDGE_KIND = "duckdb_bridge_sql"
 
 
 class MCPClient:
-    """Unified MCP client for all 4 database tools.
+    """Unified MCP client for all configured database tools.
 
-    Loads ``tools.yaml`` at init and builds an immutable 4-tool registry.
+    Loads ``tools.yaml`` at init and builds an immutable tool registry.
     ``discover_tools()`` returns the flat list without querying backends.
     ``invoke_tool()`` dispatches internally by the tool's ``kind`` field.
     """
@@ -63,7 +63,7 @@ class MCPClient:
     # ------------------------------------------------------------------
 
     def discover_tools(self) -> list[ToolDescriptor]:
-        """Return all 4 tools from the registry.
+        """Return all registered tools from the registry.
 
         No backend is queried — the registry is populated at init.
         """
@@ -75,7 +75,7 @@ class MCPClient:
         Parameters
         ----------
         tool_name : str
-            One of the 4 registered tool names.
+            One of the registered tool names.
         params : dict
             Tool-specific parameters (e.g. ``{"sql": "SELECT ..."}``).
         """
@@ -254,18 +254,19 @@ class MCPClient:
 
         Used when MCP Toolbox v0.30.0 mongodb-aggregate returns empty content.
         """
+        collection = str(params.get("collection", "")).strip()
+        mongo_tool_name = f"query_mongodb_{collection}" if collection else "query_mongodb"
         try:
             import pymongo  # deferred — only needed as fallback
         except ImportError:
             return InvokeResult(
                 success=False,
-                tool_name="query_mongodb",
+                tool_name=mongo_tool_name,
                 error="pymongo not installed",
                 error_type="config",
                 db_type=db_type,
             )
         try:
-            collection = params.get("collection", "")
             pipeline_str = params.get("pipeline", "[]")
             pipeline = json.loads(pipeline_str)
             client = pymongo.MongoClient(_MONGODB_URL, serverSelectionTimeoutMS=5000)
@@ -278,7 +279,7 @@ class MCPClient:
             logger.debug("MongoDB direct fallback: %d rows from %s", len(rows), collection)
             return InvokeResult(
                 success=True,
-                tool_name="query_mongodb",
+                tool_name=mongo_tool_name,
                 result=result,
                 error="",
                 error_type="",
@@ -287,7 +288,7 @@ class MCPClient:
         except Exception as exc:
             return InvokeResult(
                 success=False,
-                tool_name="query_mongodb",
+                tool_name=mongo_tool_name,
                 error=f"mongodb_direct_error: {exc}",
                 error_type="query_error",
                 db_type=db_type,

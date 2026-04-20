@@ -57,14 +57,20 @@ def main() -> None:
         "--datasets", type=str, nargs="+", default=ALL_DATASETS,
         help="Datasets to run (default: all 12)",
     )
+    parser.add_argument(
+        "--no-resume", action="store_true",
+        help="Ignore any existing output file and start fresh.",
+    )
     args = parser.parse_args()
 
     logger.info(
-        "Starting full DAB benchmark: %d datasets, %d trials each",
-        len(args.datasets), args.trials,
+        "Starting full DAB benchmark: %d datasets, %d trials each, resume=%s",
+        len(args.datasets), args.trials, not args.no_resume,
     )
 
-    results = run_trials(args.datasets, args.trials, args.output)
+    results = run_trials(
+        args.datasets, args.trials, args.output, resume=not args.no_resume,
+    )
 
     # Per-dataset summary
     dataset_scores: dict[str, dict] = {}

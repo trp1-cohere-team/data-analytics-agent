@@ -17,6 +17,62 @@ python3 eval/run_dab_benchmark.py --trials 5 --output results/dab_benchmark.json
 python3 eval/score_results.py --results results/dab_benchmark.json
 
 ## questions to ask 
+cd /home/nurye/data-analytics-agent
+set -a && source .env && set +a
+
+python3 eval/run_dab_benchmark.py --trials 5 --output results/dab_benchmark_5trials.json
+
+date -u
+python3 -m agent.data_agent.cli \
+  "Which companies in stockinfo are ETFs? Return 5 symbols and company descriptions." \
+  --db-hints '["sqlite"]' | tee results/live_q1_sqlite.json
+
+date -u
+python3 -m agent.data_agent.cli \
+  "What is the highest Adj Close for AAPL in 2020?" \
+  --db-hints '["duckdb"]' | tee results/live_q2_duckdb.json
+# cross db
+date -u
+python3 -m agent.data_agent.cli \
+  "What was the maximum adjusted closing price in 2020 for The RealReal, Inc.?" \
+  --db-hints '["sqlite","duckdb"]' | tee results/live_q3_sqlite_duckdb.json
+
+## running with team 
+# amare
+python3 eval/run_dab_benchmark.py --trials 5 \
+  --datasets googlelocal PANCANCER_ATLAS PATENTS stockindex \
+  --output results/amare_5trials.json
+# nurye 
+python3 eval/run_dab_benchmark.py --trials 5 \
+  --datasets stockmarket yelp agnews music_brainz_20k \
+  --output results/nurye_5trials.json
+# kemeriya
+python3 eval/run_dab_benchmark.py --trials 5 \
+  --datasets bookreview crmarenapro DEPS_DEV_V1 GITHUB_REPOS \
+  --output results/kemeriya_5trials.json
+
+
+## merge all 
+python3 - <<'PY'
+import json
+files = [
+  "results/kemeriya_5trials.json",
+  "results/amare_5trials.json",
+  "results/nurye_5trials.json",
+]
+merged = []
+for f in files:
+    with open(f, "r", encoding="utf-8") as fh:
+        merged.extend(json.load(fh))
+with open("results/dab_benchmark_5trials_merged.json", "w", encoding="utf-8") as fh:
+    json.dump(merged, fh, indent=2)
+print("merged entries:", len(merged))
+PY
+## score merge results 
+python3 eval/score_results.py --results results/dab_benchmark_5trials_merged.json
+
+
+
 
 # ✅ Questions that should succeed
 Single-DB — DuckDB (prices)
@@ -99,3 +155,32 @@ Expected: Clarification — ETF flag lives in SQLite stockinfo, not DuckDB.
 
 # Ambiguous / underspecified
 "Show me the best stock." Expected: Clarifying question — "best by what metric: return, volume, volatility, timeframe?"
+
+
+# to be fixed 
+The real issue: every dataset has its tables loaded under prefixed names (crm_*, bookreview_*, agnews_*, etc.), but DAB's db_description.txt — which the agent reads as its schema reference — uses the original unprefixed names (Lead, review, article_metadata).
+
+So the agent writes SELECT … FROM Lead (correct per the description), but the actual table is crm_Lead. Every query fails because the table name is wrong.
+
+This is a schema aliasing problem, not a data problem. Data is already loaded.
+
+Fastest, safest fix: views
+Create a view for each original-named table that redirects to the prefixed one:
+
+
+-- DuckDB
+CREATE VIEW Lead AS SELECT * FROM crm_Lead;
+CREATE VIEW Event AS SELECT * FROM crm_Event;
+... etc
+
+-- SQLite
+CREATE VIEW User AS SELECT * FROM crm_User;
+CREATE VIEW review AS SELECT * FROM bookreview_review;
+... etc
+
+-- Postgres
+CREATE VIEW "Case" AS SELECT * FROM pancancer_Mutation_Data;  -- if the mapping is right
+... etc
+Non-destructive (underlying tables untouched), quick (~50 views total), and the agent starts working immediately — no schema awareness change needed.
+
+Time estimate: 20–30 min to write the view-creation script and verify + 10 min to smoke-test + 30-60 min to re-run the ~180 failed trials on a cool API key.

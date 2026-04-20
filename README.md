@@ -145,6 +145,12 @@ flowchart TD
 - Data loading scripts: `scripts/load_dab_datasets.py`, `scripts/load_postgres_mongo.py`, `scripts/load_remaining.py`
 
 ## Clean-Machine Setup (Facilitator Runbook)
+### Prerequisites
+- Git
+- Python 3.10+ with `venv`
+- Docker Engine + Docker Compose v2 (`docker compose`)
+- Network access to pull container images and clone benchmark assets
+
 1. Clone the repository.
 ```bash
 git clone <repo-url>
@@ -160,22 +166,31 @@ pip install -r requirements.txt
 ```bash
 cp .env.example .env
 ```
-4. Start local infra stack.
+4. Set required environment variables in `.env`.
+   - At minimum, set your LLM key (for example `OPENAI_API_KEY`) when running in online mode.
+   - For deterministic local checks without API calls, set `AGENT_OFFLINE_MODE=1`.
+5. Start local infra stack.
 ```bash
 docker compose -f docker-compose.yml up -d
 ./scripts/healthcheck_stack.sh
 ```
-5. Run one agent query end-to-end.
+6. Ensure DataAgentBench assets are available (required by eval scripts).
+```bash
+git clone https://github.com/ucbepic/DataAgentBench.git external/DataAgentBench
+```
+If the folder already exists, skip this step.
+
+7. Run one agent query end-to-end.
 ```bash
 python3 -m agent.data_agent.cli \
   "What was the maximum adjusted closing price in 2020 for The RealReal, Inc.?" \
   --db-hints '["sqlite","duckdb"]'
 ```
-6. Run tests.
+8. Run tests.
 ```bash
 python3 -m unittest discover -s tests -v
 ```
-7. Run evaluation harness baseline.
+9. Run evaluation harness baseline.
 ```bash
 python3 eval/run_trials.py --trials 2 --output results/smoke.json
 python3 eval/score_results.py --results results/smoke.json

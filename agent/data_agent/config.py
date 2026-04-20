@@ -37,6 +37,11 @@ def _str(key: str, default: str = "") -> str:
     return os.environ.get(key, default)
 
 
+def _csv_list(key: str) -> list[str]:
+    raw = os.environ.get(key, "")
+    return [item.strip() for item in raw.split(",") if item.strip()]
+
+
 # ---------------------------------------------------------------------------
 # Agent Runtime
 # ---------------------------------------------------------------------------
@@ -70,6 +75,15 @@ DUCKDB_PATH: str = _str("DUCKDB_PATH", "./data/duckdb/main.duckdb")
 # ---------------------------------------------------------------------------
 
 OPENROUTER_API_KEY: str = _str("OPENROUTER_API_KEY", "")
+OPENROUTER_API_KEYS: tuple[str, ...] = tuple(
+    dict.fromkeys(
+        [
+            key
+            for key in [OPENROUTER_API_KEY, *_csv_list("OPENROUTER_API_KEYS")]
+            if key
+        ]
+    )
+)
 OPENROUTER_MODEL: str = _str("OPENROUTER_MODEL", "google/gemini-2.0-flash-001")
 OPENROUTER_BASE_URL: str = _str("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
 OPENROUTER_APP_NAME: str = _str("OPENROUTER_APP_NAME", "oracle-forge-agent")

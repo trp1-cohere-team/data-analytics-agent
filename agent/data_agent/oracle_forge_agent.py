@@ -9,6 +9,7 @@ SEC-03: Structured logging.
 from __future__ import annotations
 
 import logging
+import uuid
 from typing import Optional
 
 from agent.data_agent.config import AGENT_SESSION_ID
@@ -43,7 +44,12 @@ class OracleForgeAgent:
         logger.info("OracleForgeAgent init: session_id=%s", resolved_session)
         self._conductor = OracleForgeConductor(session_id=resolved_session)
 
-    def run_agent(self, question: str, db_hints: list[str]) -> AgentResult:
+    def run_agent(
+        self,
+        question: str,
+        db_hints: list[str],
+        dataset_context: Optional[dict] = None,
+    ) -> AgentResult:
         """Run the agent pipeline and return a structured result.
 
         Parameters
@@ -53,18 +59,20 @@ class OracleForgeAgent:
         db_hints:
             Database type hints (e.g. ``["postgres", "duckdb"]``).
             Max 10 items.
-
-        Returns
-        -------
-        AgentResult
-            Always returns — never raises to callers (SEC-15 via conductor).
+        dataset_context:
+            Optional extra context describing the active dataset. Keys:
+            ``dataset`` (str), ``db_description`` (str), ``hints`` (str),
+            ``available_databases`` (list of {type, name} descriptors).
+            Not used for routing decisions — only to inform the LLM
+            about available tables and join keys.
         """
         logger.info(
-            "OracleForgeAgent.run_agent: question=%.80s db_hints=%s",
+            "OracleForgeAgent.run_agent: question=%.80s db_hints=%s dataset=%s",
             question,
             db_hints,
+            (dataset_context or {}).get("dataset", ""),
         )
-        return self._conductor.run(question, db_hints)
+        return self._conductor.run(question, db_hints, dataset_context)
 
 
 # ---------------------------------------------------------------------------
@@ -72,11 +80,20 @@ class OracleForgeAgent:
 # ---------------------------------------------------------------------------
 
 
-def run_agent(question: str, db_hints: list[str]) -> AgentResult:
+def run_agent(
+    question: str,
+    db_hints: list[str],
+    dataset_context: Optional[dict] = None,
+) -> AgentResult:
     """Module-level convenience wrapper around ``OracleForgeAgent``.
 
     Creates a fresh agent instance for each call.  For session continuity
     across multiple queries, use the ``OracleForgeAgent`` class directly.
+
+    Each invocation is given a freshly-generated ``session_id`` so that
+    interaction memory from one question cannot leak into the next —
+    critical for batch/eval scenarios where many unrelated questions run
+    back-to-back in the same Python process.
 
     Parameters
     ----------
@@ -84,11 +101,8 @@ def run_agent(question: str, db_hints: list[str]) -> AgentResult:
         The user's analytics question (max 4096 characters).
     db_hints:
         Database type hints (e.g. ``["postgres", "duckdb"]``).
-
-    Returns
-    -------
-    AgentResult
-        Always returns — never raises.
+    dataset_context:
+        Optional dataset-level context (schema, hints, available DBs).
     """
-    agent = OracleForgeAgent()
-    return agent.run_agent(question, db_hints)
+    agent = OracleForgeAgent(session_id=str(uuid.uuid4()))
+    return agent.run_agent(question, db_hints, dataset_context)

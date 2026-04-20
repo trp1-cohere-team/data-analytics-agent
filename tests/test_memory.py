@@ -145,6 +145,34 @@ class TestMemoryManager(unittest.TestCase):
         ctx = manager.get_memory_context()
         self.assertIn("Remembered Topics", ctx)
 
+    def test_preferences_extracted_and_persisted(self) -> None:
+        """Preference statements are extracted and saved across sessions."""
+        manager = self.MemoryManager(session_id="prefs-session-a")
+        prefs = manager.update_preferences_from_text(
+            "I prefer concise answers. Please use sqlite first. Don't include emojis."
+        )
+        self.assertGreaterEqual(len(prefs), 2)
+
+        pref_path = os.path.join(self.tmpdir, "user_preferences.json")
+        self.assertTrue(os.path.exists(pref_path))
+
+        # New session should still see persisted preferences.
+        manager_b = self.MemoryManager(session_id="prefs-session-b")
+        loaded = manager_b.load_preferences()
+        self.assertTrue(any("concise answers" in p.lower() for p in loaded))
+        self.assertTrue(any("sqlite first" in p.lower() for p in loaded))
+
+    def test_memory_context_includes_user_preferences(self) -> None:
+        """Layer-5 memory context includes cross-session preference section."""
+        manager = self.MemoryManager(session_id="prefs-session-c")
+        manager.update_preferences_from_text("Always use markdown tables for outputs.")
+
+        # Different session should still load global preferences.
+        manager_other = self.MemoryManager(session_id="prefs-session-d")
+        ctx = manager_other.get_memory_context()
+        self.assertIn("User Preferences", ctx)
+        self.assertIn("markdown tables", ctx.lower())
+
 
 if __name__ == "__main__":
     unittest.main()

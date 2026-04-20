@@ -24,23 +24,17 @@ from agent.data_agent.config import (
     AGENT_CONTEXT_PATH,
     AGENT_CORRECTIONS_LOG_PATH,
     AGENT_MAX_EXECUTION_STEPS,
-    AGENT_MAX_TOKENS,
     AGENT_OFFLINE_MODE,
     AGENT_SELF_CORRECTION_RETRIES,
     AGENT_SESSION_ID,
-    AGENT_TEMPERATURE,
-    AGENT_TIMEOUT_SECONDS,
     AGENT_USE_SANDBOX,
     OFFLINE_LLM_RESPONSE,
-    OPENROUTER_APP_NAME,
-    OPENROUTER_API_KEY,
-    OPENROUTER_BASE_URL,
-    OPENROUTER_MODEL,
 )
 from agent.data_agent.context_layering import assemble_prompt, build_context_packet
 from agent.data_agent.failure_diagnostics import classify
 from agent.data_agent.knowledge_base import load_layered_kb_context
 from agent.data_agent.mcp_toolbox_client import MCPClient
+from agent.data_agent.openrouter_client import post_chat_completions
 from agent.data_agent.sandbox_client import SandboxClient
 from agent.data_agent.types import (
     AgentResult,
@@ -59,6 +53,59 @@ logger = logging.getLogger(__name__)
 
 _MAX_QUESTION_LEN = 4096
 _MAX_DB_HINTS = 10
+
+
+def _format_dataset_context(dataset_context: dict) -> str:
+    """Render optional dataset_context (schema + hints) for the prompt.
+
+    The eval harness and DAB wrapper may supply:
+      - ``dataset``: short name (e.g. "stockindex")
+      - ``available_databases``: list of {name, type} descriptors
+      - ``db_description``: full schema text per the DAB description files
+      - ``hints``: join-key and domain hints text
+
+    When any of those are present we emit a compact ``DATASET CONTEXT`` block
+    so the LLM can pick the right tool+table and write the analytic query
+    directly, without round-trips through ``information_schema``.
+    """
+    if not dataset_context:
+        return ""
+
+    sections: list[str] = []
+
+    dataset = str(dataset_context.get("dataset", "")).strip()
+    if dataset:
+        sections.append(f"Active dataset: {dataset}")
+
+    dbs = dataset_context.get("available_databases") or []
+    if dbs:
+        lines = ["Available databases (use the matching query_* tool):"]
+        for db in dbs:
+            if not isinstance(db, dict):
+                continue
+            name = str(db.get("name", "")).strip()
+            dtype = str(db.get("type", "")).strip()
+            if name and dtype:
+                lines.append(f"  - {name}: {dtype}")
+            elif dtype:
+                lines.append(f"  - {dtype}")
+            elif name:
+                lines.append(f"  - {name}")
+        if len(lines) > 1:
+            sections.append("\n".join(lines))
+
+    description = str(dataset_context.get("db_description", "")).strip()
+    if description:
+        sections.append("Schema description:\n" + description)
+
+    hints = str(dataset_context.get("hints", "")).strip()
+    if hints:
+        sections.append("Join / domain hints:\n" + hints)
+
+    if not sections:
+        return ""
+
+    return "DATASET CONTEXT (authoritative — do NOT re-discover via information_schema):\n\n" + "\n\n".join(sections)
 
 
 class OracleForgeConductor:
@@ -83,6 +130,7 @@ class OracleForgeConductor:
         self._tool_calls: list[dict] = []
         self._failure_count: int = 0
         self._sig_to_result: dict[str, str] = {}  # cache successful results per call-signature
+        self._eval_mode: bool = False  # set in _run_inner when dataset_context is supplied
 
         self._emit("session_start")
 
@@ -90,7 +138,12 @@ class OracleForgeConductor:
     # Public API
     # ------------------------------------------------------------------
 
-    def run(self, question: str, db_hints: list[str]) -> AgentResult:
+    def run(
+        self,
+        question: str,
+        db_hints: list[str],
+        dataset_context: Optional[dict] = None,
+    ) -> AgentResult:
         """Execute the full agent pipeline.
 
         Parameters
@@ -99,6 +152,10 @@ class OracleForgeConductor:
             User question (max 4096 chars).
         db_hints : list[str]
             Database type hints (max 10 items).
+        dataset_context : dict | None
+            Optional extra context about the active dataset (schema text,
+            join hints, available databases). Passed in by eval harnesses
+            and the DAB-compatible wrapper; not used by the app API.
 
         Returns
         -------
@@ -106,7 +163,7 @@ class OracleForgeConductor:
             Always returns — never raises to callers (SEC-15).
         """
         try:
-            return self._run_inner(question, db_hints)
+            return self._run_inner(question, db_hints, dataset_context or {})
         except Exception as exc:
             logger.error("Conductor unhandled error: %s", exc, exc_info=True)
             self._emit("error", outcome="unhandled_exception")
@@ -122,7 +179,13 @@ class OracleForgeConductor:
     # Inner orchestration
     # ------------------------------------------------------------------
 
-    def _run_inner(self, question: str, db_hints: list[str]) -> AgentResult:
+    def _run_inner(
+        self,
+        question: str,
+        db_hints: list[str],
+        dataset_context: dict,
+    ) -> AgentResult:
+        self._eval_mode = bool(dataset_context)
         # --- Input validation (SEC-05) ---
         self._emit(
             "question_received",
@@ -152,16 +215,24 @@ class OracleForgeConductor:
         # --- Deterministic multi-step orchestration for known stockmarket patterns ---
         # Keeps DB access inside unified MCPClient (FR-03) and avoids exhausting
         # LLM tool-call budgets on high-cardinality symbol workflows.
-        stockmarket_answer = self._try_stockmarket_orchestration(question, db_hints)
-        if stockmarket_answer is not None:
-            answer_text = stockmarket_answer
-            if self._tool_calls:
-                confidence = self._confidence_from_tool_calls()
-            else:
-                # Defensive refusal (schema confusion, mutation block, etc.) —
-                # no tool calls needed; the rejection itself is high-confidence.
-                confidence = 0.9
-            return self._finalize_result(question, answer_text, confidence)
+        #
+        # Gate: only fire when the dataset is unambiguously stockmarket. Without
+        # this check, "volatility" questions on stockindex (which also carries
+        # sqlite+duckdb hints) are mis-routed to the stockinfo table and return
+        # wrong answers. When dataset_context is absent (app/API callers) we
+        # preserve legacy behavior so the interactive path keeps working.
+        active_dataset = str(dataset_context.get("dataset", "")).strip().lower()
+        if active_dataset in ("", "stockmarket"):
+            stockmarket_answer = self._try_stockmarket_orchestration(question, db_hints)
+            if stockmarket_answer is not None:
+                answer_text = stockmarket_answer
+                if self._tool_calls:
+                    confidence = self._confidence_from_tool_calls()
+                else:
+                    # Defensive refusal (schema confusion, mutation block, etc.) —
+                    # no tool calls needed; the rejection itself is high-confidence.
+                    confidence = 0.9
+                return self._finalize_result(question, answer_text, confidence)
 
         # --- Context assembly ---
         agent_md = self._load_agent_md()
@@ -171,24 +242,74 @@ class OracleForgeConductor:
         )
         kb_results = load_layered_kb_context(question)
         kb_text = "\n\n".join(content for content, _score in kb_results[:5])
-        memory_ctx = self._memory.get_memory_context()
+
+        # In eval mode every question is independent — cross-session topic
+        # summaries from the persistent memory store would leak answers
+        # from earlier questions (e.g. a stockindex pattern showing up in a
+        # PANCANCER prompt). Skip interaction memory in that mode; the
+        # interactive /chat path still keeps it.
+        if dataset_context:
+            memory_ctx = ""
+        else:
+            memory_ctx = self._memory.get_memory_context()
 
         tools = self._registry.get_tools()
         tool_descriptions = [f"- {t.name}: {t.description}" for t in tools]
         selected_tool = self._registry.select_tool(db_hints)
 
+        # Dataset-level schema + join hints are passed by the eval harness
+        # (``run_trials.py``) and the DAB wrapper. When present, they go into
+        # the ``human_annotations`` layer so the LLM can write the analytic
+        # query directly instead of burning steps on ``information_schema``
+        # discovery.
+        dataset_block = _format_dataset_context(dataset_context)
+
+        # Resolve the actual physical table names per backend. DAB
+        # descriptions give *logical* names (e.g. ``index_trade``), but the
+        # data in our infrastructure may be loaded under a dataset-prefixed
+        # name (e.g. ``stockindex_trade``). Without this the LLM writes
+        # correct SQL that fails on a catalog lookup. Discovery is cheap —
+        # one query per DB, results filtered by dataset substring when known.
+        backend_tables_block = self._discover_backend_tables(
+            db_hints,
+            active_dataset,
+            description_text=str(dataset_context.get("db_description", "")),
+        )
+        combined_annotations = "\n\n".join(
+            part for part in (dataset_block, backend_tables_block, kb_text) if part
+        )
+
+        available_dbs = dataset_context.get("available_databases") or []
+        runtime_ctx: dict[str, Any] = {
+            "session_id": self._session_id,
+            "discovered_tools": [t.name for t in tools],
+            "selected_db": selected_tool.name if selected_tool else "none",
+            "db_hints": db_hints,
+            "offline_mode": AGENT_OFFLINE_MODE,
+        }
+        if active_dataset:
+            runtime_ctx["dataset"] = active_dataset
+        if available_dbs:
+            runtime_ctx["available_databases"] = available_dbs
+        # When the harness has already given us the schema, instruct the LLM
+        # to skip information_schema discovery — this was the dominant cause
+        # of run-out-of-steps failures in debug_subset.
+        if dataset_block:
+            runtime_ctx["schema_already_provided"] = True
+        # Presence of dataset_context signals a benchmark/eval run. In that
+        # mode the caller expects a concrete answer, not a clarifying
+        # question — the LLM should make a reasonable assumption, state it
+        # briefly, and produce the computed result.
+        if dataset_context:
+            runtime_ctx["mode"] = "evaluation"
+            runtime_ctx["no_clarifying_questions"] = True
+
         packet = build_context_packet(
             user_question=question,
             interaction_memory=memory_ctx,
-            runtime_context={
-                "session_id": self._session_id,
-                "discovered_tools": [t.name for t in tools],
-                "selected_db": selected_tool.name if selected_tool else "none",
-                "db_hints": db_hints,
-                "offline_mode": AGENT_OFFLINE_MODE,
-            },
+            runtime_context=runtime_ctx,
             institutional_knowledge=agent_md,
-            human_annotations=kb_text,
+            human_annotations=combined_annotations,
             table_usage="\n".join(tool_descriptions),
         )
 
@@ -238,6 +359,25 @@ class OracleForgeConductor:
 
             tool_name = tool_call.get("tool", "")
             params = tool_call.get("parameters", {})
+
+            # Guard against TOOL_CALL lines that name a SQL/aggregate tool but
+            # supply no payload (``parameters: {}``). Running such a call
+            # wastes a step on a guaranteed failure; instead, record a
+            # corrective evidence entry and let the LLM retry with a filled
+            # payload on the next step.
+            if tool_name.startswith("query_") and not self._has_tool_payload(tool_name, params):
+                self._emit("tool_call", tool_name=tool_name, outcome="empty_params")
+                execution_evidence.append({
+                    "error": (
+                        f"Tool '{tool_name}' was called with empty parameters. "
+                        "SQL tools require a 'sql' string; MongoDB tools require "
+                        "'collection' and 'pipeline'."
+                    ),
+                    "tool": tool_name,
+                    "step": step + 1,
+                })
+                continue
+
             call_signature = f"{tool_name}|{json.dumps(params, sort_keys=True, default=str)}"
 
             # Prevent wasting steps on identical successful calls.
@@ -711,6 +851,242 @@ class OracleForgeConductor:
             for symbol in top_symbols
         ]
         return "\n".join(names) if names else None
+
+    # ------------------------------------------------------------------
+    # Backend table discovery
+    # ------------------------------------------------------------------
+
+    _DISCOVERY_SQL: dict[str, tuple[str, str]] = {
+        "sqlite": (
+            "query_sqlite",
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name",
+        ),
+        "duckdb": (
+            "query_duckdb",
+            "SELECT table_name FROM information_schema.tables "
+            "WHERE table_schema='main' ORDER BY table_name",
+        ),
+        "postgres": (
+            "query_postgresql",
+            "SELECT table_name FROM information_schema.tables "
+            "WHERE table_schema NOT IN ('pg_catalog','information_schema') "
+            "AND table_type='BASE TABLE' ORDER BY table_name",
+        ),
+    }
+
+    # Per-table column discovery — runs only on the filtered tables so the
+    # prompt stays small. Column knowledge is what lets the LLM use the
+    # real names (e.g. ``histological_type``) instead of guessing from the
+    # DAB description (``histology``).
+    _COLUMNS_SQL: dict[str, str] = {
+        "sqlite": (
+            "SELECT m.name AS table_name, p.name AS column_name "
+            "FROM sqlite_master m JOIN pragma_table_info(m.name) p "
+            "WHERE m.type='table' AND m.name IN ({names}) "
+            "ORDER BY m.name, p.cid"
+        ),
+        "duckdb": (
+            "SELECT table_name, column_name FROM information_schema.columns "
+            "WHERE table_schema='main' AND table_name IN ({names}) "
+            "ORDER BY table_name, ordinal_position"
+        ),
+        "postgres": (
+            "SELECT table_name, column_name FROM information_schema.columns "
+            "WHERE table_schema='public' AND table_name IN ({names}) "
+            "ORDER BY table_name, ordinal_position"
+        ),
+    }
+
+    _HINT_NORMALIZE: dict[str, str] = {
+        "postgresql": "postgres",
+        "postgres": "postgres",
+        "pg": "postgres",
+        "sqlite": "sqlite",
+        "duckdb": "duckdb",
+        "duck": "duckdb",
+    }
+
+    def _discover_backend_tables(
+        self,
+        db_hints: list[str],
+        dataset_name: str,
+        description_text: str = "",
+    ) -> str:
+        """Run a one-shot table list per backend and format for the prompt.
+
+        Skips MongoDB (collections are already named in the tools.yaml
+        registry). Filters the returned table list by:
+          1. dataset name tokens (prefix match), and
+          2. any table name that appears in ``description_text`` (so tables
+             like ``clinical_info`` that don't carry a dataset prefix are
+             still surfaced).
+        """
+        normalised: list[str] = []
+        for raw in db_hints or []:
+            t = self._HINT_NORMALIZE.get(str(raw).lower().strip(), str(raw).lower().strip())
+            if t in self._DISCOVERY_SQL and t not in normalised:
+                normalised.append(t)
+
+        if not normalised:
+            return ""
+
+        # Candidate filter tokens derived from the dataset name. For
+        # ``PANCANCER_ATLAS`` we try ``pancancer_atlas`` first (exact), then
+        # individual tokens like ``pancancer``/``atlas``. This matches
+        # dataset-prefixed tables regardless of whether the infra loaded
+        # them with the full or shortened name.
+        tokens: list[str] = []
+        ds_lower = (dataset_name or "").lower().strip()
+        if ds_lower:
+            tokens.append(ds_lower)
+            for part in re.split(r"[^a-z0-9]+", ds_lower):
+                if len(part) >= 4 and part not in tokens:
+                    tokens.append(part)
+
+        sections: list[str] = []
+        needs_quoting_note = False
+        for db_type in normalised:
+            tool_name, sql = self._DISCOVERY_SQL[db_type]
+            # Discovery queries are infrastructure — they must not appear in
+            # the user-visible tool_call trace, confidence score, or event
+            # stream, otherwise the LLM sees an inflated history and retries
+            # its own schema-listing call.
+            rows = self._run_discovery_query(tool_name, sql)
+            if not rows:
+                continue
+            names: list[str] = []
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                for key in ("table_name", "name"):
+                    val = row.get(key)
+                    if isinstance(val, str) and val:
+                        names.append(val)
+                        break
+            if not names:
+                continue
+
+            # Token-prefix match (dataset_name tokens).
+            by_token: list[str] = []
+            for token in tokens:
+                m = [n for n in names if token in n.lower()]
+                if m:
+                    by_token = m
+                    break
+
+            # Description-text match: any table whose literal name occurs in
+            # the DAB description is clearly relevant even when its physical
+            # name lacks the dataset prefix (e.g. ``clinical_info`` for
+            # PANCANCER_ATLAS, ``business_description`` for googlelocal).
+            # Word-boundary match avoids false positives on short ticker
+            # names like ``AL`` or ``AIN`` that would accidentally substring
+            # into prose like "alive"/"main".
+            desc = (description_text or "").lower()
+            by_desc: list[str] = []
+            if desc:
+                for n in names:
+                    # Skip short all-alpha names — likely ticker symbols that
+                    # would accidentally match ordinary English words in the
+                    # description text (e.g. ``PASS``, ``AIN``, ``COM``).
+                    if len(n) < 4 or (len(n) <= 6 and n.isalpha()):
+                        continue
+                    if re.search(r"\b" + re.escape(n.lower()) + r"\b", desc):
+                        by_desc.append(n)
+
+            # Preserve order (prefix-matched first, then extras from desc).
+            merged: list[str] = []
+            for n in by_token + by_desc:
+                if n not in merged:
+                    merged.append(n)
+            filtered = merged if merged else names
+            # Cap to keep prompt size bounded.
+            capped = filtered[:15]
+            omitted = len(filtered) - len(capped)
+            suffix = f" (+{omitted} more)" if omitted > 0 else ""
+
+            # Flag case-sensitive names so the LLM knows to quote them in PG.
+            if db_type == "postgres" and any(t != t.lower() for t in capped):
+                needs_quoting_note = True
+
+            # Fetch column info for the matched tables.
+            columns_by_table = self._fetch_columns(db_type, tool_name, capped)
+            if columns_by_table:
+                lines = [f"{tool_name} ({db_type}):"]
+                for t in capped:
+                    cols = columns_by_table.get(t, [])
+                    cols_fmt = ", ".join(cols[:20])
+                    more = f" (+{len(cols) - 20})" if len(cols) > 20 else ""
+                    lines.append(f"  - {t}({cols_fmt}{more})")
+                if suffix:
+                    lines.append(f"  {suffix.strip()}")
+                sections.append("\n".join(lines))
+            else:
+                sections.append(
+                    f"{tool_name} ({db_type}) tables: {', '.join(capped)}{suffix}"
+                )
+
+        if not sections:
+            return ""
+        header = (
+            "PHYSICAL TABLES + COLUMNS IN THE BACKEND (use these exact names "
+            "— they override any logical names in the schema description):"
+        )
+        if needs_quoting_note:
+            header += (
+                "\nNote: PostgreSQL folds unquoted identifiers to lowercase. "
+                "Any table or column that contains uppercase letters MUST be "
+                'double-quoted in SQL (e.g. "pancancer_RNASeq_Expression").'
+            )
+        return header + "\n" + "\n".join(sections)
+
+    def _fetch_columns(
+        self, db_type: str, tool_name: str, table_names: list[str]
+    ) -> dict[str, list[str]]:
+        """Return ``{table_name: [columns]}`` for the given tables.
+
+        Empty return means the column discovery wasn't possible on this
+        backend; callers fall back to table-name-only listing.
+        """
+        if not table_names:
+            return {}
+        template = self._COLUMNS_SQL.get(db_type)
+        if not template:
+            return {}
+        literals = ",".join("'" + n.replace("'", "''") + "'" for n in table_names)
+        sql = template.format(names=literals)
+        rows = self._run_discovery_query(tool_name, sql)
+        if not rows:
+            return {}
+        grouped: dict[str, list[str]] = {}
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            t = row.get("table_name")
+            c = row.get("column_name")
+            if isinstance(t, str) and isinstance(c, str):
+                grouped.setdefault(t, []).append(c)
+        return grouped
+
+    def _run_discovery_query(self, tool_name: str, sql: str) -> Optional[list[dict]]:
+        """Run a schema-discovery query without touching the tool_call trace.
+
+        Used by ``_discover_backend_tables`` — these calls are internal
+        plumbing, not part of the agent's answer derivation, so we bypass
+        event emission, the trace list, the confidence calculation, and
+        the self-correction loop.
+        """
+        try:
+            result = self._mcp.invoke_tool(tool_name, {"sql": sql})
+        except Exception as exc:
+            logger.debug("Discovery query failed (%s): %s", tool_name, exc)
+            return None
+        if not result.success:
+            return None
+        if isinstance(result.result, list):
+            return result.result
+        if isinstance(result.result, dict):
+            return [result.result]
+        return []
 
     def _invoke_sql_tool(self, tool_name: str, sql: str) -> Optional[list[dict]]:
         """Invoke a SQL tool via MCPClient with policy checks + trace events."""
@@ -1242,18 +1618,25 @@ class OracleForgeConductor:
             answer_text = "I'm not able to produce a reliable answer for this question. Please rephrase or be more specific."
 
         # --- Memory ---
-        from agent.data_agent.types import MemoryTurn
+        # In eval mode each question is independent — skip both the session
+        # transcript and the cross-session topic consolidation so benchmark
+        # runs don't leak Q(i-1)'s answer into Q(i)'s prompt, and so the
+        # persistent topic store isn't polluted by eval-specific questions
+        # that shouldn't inform later interactive sessions.
+        if not self._eval_mode:
+            from agent.data_agent.types import MemoryTurn
 
-        ts = datetime.now(timezone.utc).isoformat()
-        self._memory.save_turn(MemoryTurn(role="user", content=question, timestamp=ts, session_id=self._session_id))
-        self._memory.save_turn(MemoryTurn(role="assistant", content=answer_text[:500], timestamp=ts, session_id=self._session_id))
+            ts = datetime.now(timezone.utc).isoformat()
+            self._memory.update_preferences_from_text(question)
+            self._memory.save_turn(MemoryTurn(role="user", content=question, timestamp=ts, session_id=self._session_id))
+            self._memory.save_turn(MemoryTurn(role="assistant", content=answer_text[:500], timestamp=ts, session_id=self._session_id))
 
-        # --- Consolidate session → topics + index (Layer 2 + 1) ---
-        self._memory.consolidate_to_topics(
-            question=question,
-            answer=answer_text,
-            tool_calls=self._tool_calls,
-        )
+            # --- Consolidate session → topics + index (Layer 2 + 1) ---
+            self._memory.consolidate_to_topics(
+                question=question,
+                answer=answer_text,
+                tool_calls=self._tool_calls,
+            )
 
         self._emit(
             "session_end",
@@ -1278,6 +1661,234 @@ class OracleForgeConductor:
     # ------------------------------------------------------------------
     # Self-correction loop (FR-04)
     # ------------------------------------------------------------------
+
+    _SQL_IDENTIFIER_FIXUPS: tuple[str, ...] = (
+        "Adj Close",
+        "Listing Exchange",
+        "Financial Status",
+        "Market Category",
+        "Company Description",
+        "Nasdaq Traded",
+    )
+
+    def _recover_query_syntax(self, tool_name: str, params: dict) -> Optional[tuple[str, dict]]:
+        """Deterministic syntax-focused recovery for SQL payloads."""
+        sql = params.get("sql")
+        if not isinstance(sql, str) or not sql.strip():
+            return None
+
+        rewritten = sql.strip().strip("`").replace("“", '"').replace("”", '"').replace("’", "'")
+        if rewritten.endswith(";"):
+            rewritten = rewritten[:-1].strip()
+
+        for ident in self._SQL_IDENTIFIER_FIXUPS:
+            pattern = re.compile(rf'(?<!")\b{re.escape(ident)}\b(?!")')
+            rewritten = pattern.sub(f'"{ident}"', rewritten)
+
+        if rewritten != sql:
+            return tool_name, {"sql": rewritten}
+        return None
+
+    @staticmethod
+    def _extract_sql_tables(sql: str) -> list[str]:
+        names: list[str] = []
+        for pat in (r"\bfrom\s+([a-zA-Z_][\w$]*)", r"\bjoin\s+([a-zA-Z_][\w$]*)"):
+            for m in re.findall(pat, sql, flags=re.IGNORECASE):
+                if m not in names:
+                    names.append(m)
+        return names
+
+    def _schema_columns_for_table(self, tool_name: str, table_name: str) -> list[str]:
+        """Return discovered column names for one table on a SQL backend."""
+        if not table_name:
+            return []
+        table = table_name.replace("'", "''")
+
+        if tool_name == "query_sqlite":
+            sql = f"SELECT name AS column_name FROM pragma_table_info('{table}') ORDER BY cid"
+        elif tool_name == "query_duckdb":
+            sql = (
+                "SELECT column_name FROM information_schema.columns "
+                f"WHERE table_schema='main' AND table_name='{table}' ORDER BY ordinal_position"
+            )
+        elif tool_name == "query_postgresql":
+            sql = (
+                "SELECT column_name FROM information_schema.columns "
+                f"WHERE table_schema='public' AND table_name='{table}' ORDER BY ordinal_position"
+            )
+        else:
+            return []
+
+        rows = self._run_discovery_query(tool_name, sql)
+        if not rows:
+            return []
+        out: list[str] = []
+        for row in rows:
+            col = row.get("column_name") if isinstance(row, dict) else None
+            if isinstance(col, str) and col and col not in out:
+                out.append(col)
+        return out
+
+    def _recover_join_key(self, tool_name: str, params: dict) -> Optional[tuple[str, dict]]:
+        """Deterministic join-key recovery by resolving shared columns."""
+        sql = params.get("sql")
+        if not isinstance(sql, str) or " join " not in sql.lower():
+            return None
+        if tool_name not in {"query_sqlite", "query_duckdb", "query_postgresql"}:
+            return None
+
+        tables = self._extract_sql_tables(sql)
+        if len(tables) < 2:
+            return None
+        left, right = tables[0], tables[1]
+
+        left_cols = set(self._schema_columns_for_table(tool_name, left))
+        right_cols = set(self._schema_columns_for_table(tool_name, right))
+        shared = left_cols & right_cols
+        if not shared:
+            return None
+
+        priority = (
+            "id", "symbol", "ticker", "date", "customer_id", "order_id", "user_id", "product_id"
+        )
+        join_col = ""
+        for key in priority:
+            if key in shared:
+                join_col = key
+                break
+        if not join_col:
+            join_col = sorted(shared)[0]
+
+        from_alias = re.search(
+            rf"\bfrom\s+{re.escape(left)}(?:\s+(?:as\s+)?([a-zA-Z_][\w$]*))?",
+            sql,
+            flags=re.IGNORECASE,
+        )
+        join_alias = re.search(
+            rf"\bjoin\s+{re.escape(right)}(?:\s+(?:as\s+)?([a-zA-Z_][\w$]*))?",
+            sql,
+            flags=re.IGNORECASE,
+        )
+        lref = (from_alias.group(1) if from_alias and from_alias.group(1) else left)
+        rref = (join_alias.group(1) if join_alias and join_alias.group(1) else right)
+        on_clause = f"ON {lref}.{join_col} = {rref}.{join_col}"
+
+        rewritten = sql
+        if re.search(r"\busing\s*\([^)]*\)", sql, flags=re.IGNORECASE):
+            rewritten = re.sub(
+                r"\busing\s*\([^)]*\)",
+                on_clause,
+                sql,
+                count=1,
+                flags=re.IGNORECASE,
+            )
+        elif re.search(r"\bon\b", sql, flags=re.IGNORECASE):
+            rewritten = re.sub(
+                r"\bon\b\s+.*?(?=(\bwhere\b|\bgroup\b|\border\b|\blimit\b|$))",
+                on_clause + " ",
+                sql,
+                count=1,
+                flags=re.IGNORECASE | re.DOTALL,
+            )
+        else:
+            return None
+
+        if rewritten != sql:
+            return tool_name, {"sql": rewritten}
+        return None
+
+    @staticmethod
+    def _recover_db_type(tool_name: str, params: dict, error: str, context: dict) -> Optional[tuple[str, dict]]:
+        """Deterministic DB rerouting recovery for dialect/backend mismatches."""
+        lowered = str(error or "").lower()
+        sql = params.get("sql")
+        sql_payload = isinstance(sql, str) and bool(sql.strip())
+
+        direct_map = {
+            "duckdb": "query_duckdb",
+            "sqlite": "query_sqlite",
+            "postgres": "query_postgresql",
+            "postgresql": "query_postgresql",
+            "mongo": "query_mongodb",
+            "mongodb": "query_mongodb",
+        }
+        target = ""
+        for key, mapped in direct_map.items():
+            if key in lowered:
+                target = mapped
+                break
+
+        if not target:
+            hinted = str(context.get("db_type", "")).lower().strip()
+            if hinted in ("duckdb", "sqlite", "postgres", "postgresql", "mongodb"):
+                target = direct_map["postgres" if hinted == "postgresql" else hinted]
+
+        if not target or target == tool_name:
+            if tool_name == "query_sqlite":
+                target = "query_duckdb"
+            elif tool_name == "query_duckdb":
+                target = "query_postgresql"
+            elif tool_name == "query_postgresql":
+                target = "query_sqlite"
+            else:
+                return None
+
+        if target == "query_mongodb":
+            collection = params.get("collection")
+            pipeline = params.get("pipeline")
+            if collection and pipeline:
+                return target, {"collection": collection, "pipeline": pipeline}
+            return None
+
+        if not sql_payload:
+            return None
+        return target, {"sql": sql}
+
+    @staticmethod
+    def _recover_data_quality(tool_name: str, params: dict) -> Optional[tuple[str, dict]]:
+        """Deterministic data-quality recovery by probing row counts/sample size."""
+        if tool_name in {"query_sqlite", "query_duckdb", "query_postgresql"}:
+            sql = params.get("sql")
+            if not isinstance(sql, str) or not sql.strip():
+                return None
+            inner = sql.strip().rstrip(";")
+            probe = f'SELECT COUNT(*) AS row_count FROM ({inner}) AS _probe'
+            return tool_name, {"sql": probe}
+
+        if tool_name == "query_mongodb":
+            collection = params.get("collection")
+            if not isinstance(collection, str) or not collection.strip():
+                return None
+            pipeline = params.get("pipeline")
+            try:
+                parsed = json.loads(pipeline) if isinstance(pipeline, str) else pipeline
+            except Exception:
+                parsed = []
+            if not isinstance(parsed, list):
+                parsed = []
+            parsed = parsed + [{"$limit": 5}]
+            return tool_name, {"collection": collection, "pipeline": json.dumps(parsed)}
+
+        return None
+
+    def _category_recovery_seed(
+        self,
+        diagnosis_category: str,
+        tool_name: str,
+        params: dict,
+        error: str,
+        context: dict,
+    ) -> Optional[tuple[str, dict]]:
+        """Return a deterministic recovery call for a diagnosis category."""
+        if diagnosis_category == "query":
+            return self._recover_query_syntax(tool_name, params)
+        if diagnosis_category == "join-key":
+            return self._recover_join_key(tool_name, params)
+        if diagnosis_category == "db-type":
+            return self._recover_db_type(tool_name, params, error, context)
+        if diagnosis_category == "data-quality":
+            return self._recover_data_quality(tool_name, params)
+        return None
 
     def _self_correct(
         self,
@@ -1305,7 +1916,48 @@ class OracleForgeConductor:
             )
 
             # Write correction entry
-            self._write_correction(diagnosis, error, retry)
+            self._write_correction(
+                diagnosis=diagnosis,
+                error=error,
+                retry=retry,
+                tool_name=tool_name,
+                failed_params=original_params,
+            )
+
+            # Category-specific deterministic recovery before LLM retry.
+            seeded = self._category_recovery_seed(
+                diagnosis.category, tool_name, original_params, error, context
+            )
+            if seeded is not None:
+                seed_tool, seed_params = seeded
+                ok, reason = self._policy.validate_invocation(seed_tool, seed_params)
+                if ok:
+                    seeded_result = self._invoke_runtime_tool(seed_tool, seed_params)
+                    self._tool_calls.append(
+                        {
+                            "tool_name": seed_tool,
+                            "params": seed_params,
+                            "success": seeded_result.success,
+                            "retry": retry,
+                            "recovery_category": diagnosis.category,
+                            "recovery_strategy": "deterministic",
+                        }
+                    )
+                    backend = self._backend_from_result(seeded_result)
+                    self._emit(
+                        "tool_result",
+                        tool_name=seed_tool,
+                        db_type=seeded_result.db_type,
+                        outcome="success" if seeded_result.success else "failure",
+                        retry_count=retry,
+                        backend=backend,
+                    )
+                    if seeded_result.success:
+                        return seeded_result
+                    error = seeded_result.error
+                    context = {"error_type": seeded_result.error_type, "db_type": seeded_result.db_type}
+                else:
+                    error = f"Policy blocked deterministic recovery: {reason}"
 
             # Ask LLM for corrected approach
             correction_prompt = (
@@ -1456,10 +2108,15 @@ class OracleForgeConductor:
                 "content": (
                     f"Execution context:\n{evidence_text}\n\n"
                     "If you have enough data, respond with ANSWER: <your answer>. "
-                    "Otherwise respond with: "
+                    "Otherwise respond with ONE line: "
                     "TOOL_CALL: {\"tool\": \"<tool_name>\", \"parameters\": {\"sql\": \"<SQL>\"}}\n"
-                    "Do not repeat an identical successful tool call. "
-                    "Use prior results to take the next step."
+                    "Rules:\n"
+                    "- Always include a non-empty payload (sql / collection+pipeline).\n"
+                    "- Do not repeat an identical successful tool call.\n"
+                    "- If the DATASET CONTEXT names the tables, query them directly "
+                    "instead of running information_schema or list_tables again.\n"
+                    "- If the question spans multiple DB types, issue a separate TOOL_CALL "
+                    "per DB and combine results in the final ANSWER."
                 ),
             })
         else:
@@ -1467,29 +2124,16 @@ class OracleForgeConductor:
                 "role": "user",
                 "content": (
                     "Call a database tool to retrieve the data needed to answer the question. "
-                    "Respond ONLY with: "
-                    "TOOL_CALL: {\"tool\": \"<tool_name>\", \"parameters\": {\"sql\": \"<SQL>\"}}"
+                    "Respond ONLY with one line: "
+                    "TOOL_CALL: {\"tool\": \"<tool_name>\", \"parameters\": {\"sql\": \"<SQL>\"}}\n"
+                    "If the DATASET CONTEXT names tables/columns, use them directly — "
+                    "do NOT run information_schema discovery. "
+                    "Always include a non-empty sql/pipeline payload."
                 ),
             })
 
         try:
-            resp = requests.post(
-                f"{OPENROUTER_BASE_URL}/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                    "HTTP-Referer": OPENROUTER_APP_NAME,
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": OPENROUTER_MODEL,
-                    "messages": messages,
-                    "max_tokens": AGENT_MAX_TOKENS,
-                    "temperature": AGENT_TEMPERATURE,
-                },
-                timeout=AGENT_TIMEOUT_SECONDS,
-            )
-            resp.raise_for_status()
-            return resp.json()
+            return post_chat_completions(messages=messages, logger=logger)
         except requests.Timeout:
             logger.warning("LLM call timed out")
             return {"choices": [{"message": {"content": "LLM call timed out. Returning best available answer."}}]}
@@ -1644,6 +2288,26 @@ class OracleForgeConductor:
     def _has_successful_evidence(evidence: list[dict]) -> bool:
         """True when at least one successful tool result has been recorded."""
         return any(e.get("success") for e in evidence)
+
+    @staticmethod
+    def _has_tool_payload(tool_name: str, params: dict) -> bool:
+        """Return True when a ``query_*`` call carries a usable payload.
+
+        - SQL tools (sqlite / duckdb / postgres) need a non-empty ``sql``.
+        - MongoDB aggregation tools need both ``collection`` and ``pipeline``.
+        - ``execute_python`` needs a ``code`` string.
+        """
+        if not isinstance(params, dict):
+            return False
+        lname = tool_name.lower()
+        if "mongo" in lname:
+            return bool(str(params.get("collection", "")).strip()) and bool(
+                str(params.get("pipeline", "")).strip()
+            )
+        if tool_name == "execute_python":
+            return bool(str(params.get("code", "")).strip())
+        sql = params.get("sql", "")
+        return isinstance(sql, str) and bool(sql.strip())
 
     @staticmethod
     def _summarize_result(result: Any) -> dict[str, Any]:
@@ -1837,6 +2501,14 @@ class OracleForgeConductor:
                 blocks.append(f"[{idx}] {tool}: {summary}")
         results_text = "\n".join(blocks)
 
+        eval_mode = "mode = evaluation" in prompt or "no_clarifying_questions" in prompt
+        ambiguity_rule = (
+            "- If the question is ambiguous, state one brief assumption "
+            "(e.g. 'Assuming dollar-cost averaging in local currency') then "
+            "give a concrete answer. Do NOT ask the user for clarification."
+            if eval_mode
+            else "- If the question is ambiguous, ask ONE short clarifying question instead of guessing."
+        )
         synthesis_prompt = (
             f"USER QUESTION: {question}\n\n"
             f"TOOL RESULTS (already validated — summarized):\n{results_text}\n\n"
@@ -1846,7 +2518,7 @@ class OracleForgeConductor:
             "- Do NOT describe your reasoning, retries, or tool-call history.\n"
             "- Do NOT echo the question back.\n"
             "- If the data is empty or does not answer the question, say so plainly.\n"
-            "- If the question is ambiguous, ask ONE short clarifying question instead of guessing.\n"
+            f"{ambiguity_rule}\n"
             "Respond with: ANSWER: <your answer>"
         )
         response = self._call_llm(prompt + "\n\n" + synthesis_prompt, [], mode="synthesize")
@@ -1950,7 +2622,34 @@ class OracleForgeConductor:
     # Corrections log
     # ------------------------------------------------------------------
 
-    def _write_correction(self, diagnosis: Any, error: str, retry: int) -> None:
+    def _format_failed_query(self, tool_name: str, failed_params: dict) -> str:
+        """Render failed tool input into a rubric-friendly query block."""
+        if not isinstance(failed_params, dict):
+            return "(not available)"
+
+        if "mongo" in str(tool_name).lower():
+            collection = str(failed_params.get("collection", "")).strip()
+            pipeline = failed_params.get("pipeline", "")
+            pipeline_text = pipeline if isinstance(pipeline, str) else json.dumps(pipeline, default=str)
+            if collection and pipeline_text:
+                return f"collection={collection}\npipeline={pipeline_text}"
+            return pipeline_text or "(not available)"
+
+        if tool_name == "execute_python":
+            code = failed_params.get("code", "")
+            return str(code).strip() or "(not available)"
+
+        sql = failed_params.get("sql", "")
+        return str(sql).strip() or "(not available)"
+
+    def _write_correction(
+        self,
+        diagnosis: Any,
+        error: str,
+        retry: int,
+        tool_name: str,
+        failed_params: dict,
+    ) -> None:
         """Append a correction entry to the corrections log."""
         ts = datetime.now(timezone.utc).isoformat()
         entry = CorrectionEntry(
@@ -1963,13 +2662,21 @@ class OracleForgeConductor:
             outcome="pending",
         )
 
+        failed_query = sanitize_sql_for_log(
+            self._format_failed_query(tool_name, failed_params),
+            max_length=1200,
+        )
+
         line = (
             f"\n### Correction — {ts}\n"
             f"- **Session**: {entry.session_id}\n"
             f"- **Category**: {entry.diagnosis_category}\n"
-            f"- **Error**: {entry.original_error}\n"
-            f"- **Fix**: {entry.correction_applied}\n"
+            f"- **Failed Query**:\n"
+            f"  ```\n{failed_query}\n  ```\n"
+            f"- **What Was Wrong**: {entry.original_error}\n"
+            f"- **Correct Approach**: {entry.correction_applied}\n"
             f"- **Retry**: {entry.retry_number}\n"
+            f"- **Outcome**: {entry.outcome}\n"
         )
 
         try:

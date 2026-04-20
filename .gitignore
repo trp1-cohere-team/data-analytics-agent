@@ -19,6 +19,8 @@ __pycache__/
 .idea/
 .vscode/
 *.iml
+mermaid.md
+logs/
 *.sublime-project
 openai-context-layering/
 test.md

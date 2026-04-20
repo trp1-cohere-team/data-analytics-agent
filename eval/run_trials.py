@@ -15,6 +15,7 @@ import argparse
 import json
 import logging
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -98,9 +99,61 @@ def _load_db_hints(dataset: str) -> list[str]:
         return ["postgres", "sqlite"]
 
 
+def _load_available_databases(dataset: str) -> list[dict]:
+    """Return list of {name, type} descriptors from db_config.yaml.
+
+    Preserves the per-database naming (e.g. ``business_database`` /
+    ``review_database``) so the agent can cite the right source when
+    constructing multi-DB workflows.
+    """
+    config_path = DAB_ROOT / f"query_{dataset}" / "db_config.yaml"
+    if not config_path.exists():
+        return []
+    try:
+        import yaml  # type: ignore
+        with open(config_path, encoding="utf-8") as fh:
+            cfg = yaml.safe_load(fh)
+    except Exception as exc:
+        logger.warning("Could not parse db_config.yaml for %s: %s", dataset, exc)
+        return []
+
+    clients = cfg.get("db_clients", {}) or {}
+    items: list[dict] = []
+    for name, spec in clients.items():
+        if not isinstance(spec, dict):
+            continue
+        items.append({
+            "name": str(name),
+            "type": str(spec.get("db_type", "")),
+        })
+    return items
+
+
+def _load_dataset_description(dataset: str) -> tuple[str, str]:
+    """Return (db_description, hints) for the dataset, or ("", "") on miss."""
+    base = DAB_ROOT / f"query_{dataset}"
+    description = ""
+    hints = ""
+    desc_path = base / "db_description.txt"
+    hint_path = base / "db_description_withhint.txt"
+    try:
+        if desc_path.exists():
+            description = desc_path.read_text(encoding="utf-8").strip()
+    except OSError as exc:
+        logger.warning("Could not read %s: %s", desc_path, exc)
+    try:
+        if hint_path.exists():
+            raw = hint_path.read_text(encoding="utf-8").strip()
+            # ``db_description_withhint.txt`` files start with ``HINTS:`` and
+            # contain only the hint lines. Strip the header for cleaner prompts.
+            hints = re.sub(r"^\s*HINTS\s*:\s*", "", raw, flags=re.IGNORECASE).strip()
+    except OSError as exc:
+        logger.warning("Could not read %s: %s", hint_path, exc)
+    return description, hints
+
+
 def _answer_passes(answer: str, ground_truth: str) -> bool:
     """Heuristic pass check: ground truth substring in answer, or numeric match."""
-    import re
     if not ground_truth:
         return False
     a = answer.strip().lower()
@@ -131,14 +184,61 @@ def _answer_passes(answer: str, ground_truth: str) -> bool:
     return False
 
 
+def _write_results(path: str, results: list[dict]) -> None:
+    """Atomic checkpoint write: write to ``<path>.tmp`` then rename.
+
+    Prevents a partial file if the process is killed mid-write, so a
+    resumed run can always read the last successful snapshot.
+    """
+    tmp = path + ".tmp"
+    try:
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump(results, fh, indent=2, default=str)
+        os.replace(tmp, path)
+    except OSError as exc:
+        logger.error("Failed to write results to %s: %s", path, exc)
+
+
+def _load_previous_results(path: str) -> list[dict]:
+    """Load prior results (for resume). Returns empty list on any issue."""
+    if not os.path.exists(path):
+        return []
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        if isinstance(data, list):
+            return data
+    except (OSError, json.JSONDecodeError) as exc:
+        logger.warning("Could not read prior results at %s: %s — starting fresh", path, exc)
+    return []
+
+
 def run_trials(
     datasets: list[str],
     trials: int,
     output_path: str,
+    resume: bool = True,
 ) -> list[dict]:
-    """Run agent trials across datasets and return results list."""
-    results: list[dict] = []
+    """Run agent trials across datasets and return results list.
+
+    Resume: if ``resume=True`` (default) and ``output_path`` already
+    contains a JSON array, previously completed (dataset, query_id, trial)
+    triples are skipped. The file is checkpointed after every trial so
+    partial progress survives SIGINT / kill.
+    """
     os.makedirs(os.path.dirname(os.path.abspath(output_path)) or ".", exist_ok=True)
+
+    results: list[dict] = _load_previous_results(output_path) if resume else []
+    done_keys: set[tuple] = {
+        (r.get("dataset"), r.get("query_id"), r.get("trial"))
+        for r in results
+        if r.get("dataset") and r.get("query_id") and r.get("trial")
+    }
+    if done_keys:
+        logger.info(
+            "Resuming from %s — %d existing entries; will skip those",
+            output_path, len(done_keys),
+        )
 
     for dataset in datasets:
         dataset_dir = DAB_ROOT / f"query_{dataset}"
@@ -147,7 +247,20 @@ def run_trials(
             continue
 
         db_hints = _load_db_hints(dataset)
-        logger.info("Dataset: %s | db_hints: %s", dataset, db_hints)
+        available_dbs = _load_available_databases(dataset)
+        description, hints_text = _load_dataset_description(dataset)
+        dataset_context = {
+            "dataset": dataset,
+            "available_databases": available_dbs,
+            "db_description": description,
+            "hints": hints_text,
+        }
+        logger.info(
+            "Dataset: %s | db_hints: %s | dbs: %s | schema_chars=%d hints_chars=%d",
+            dataset, db_hints,
+            [f"{d.get('name')}({d.get('type')})" for d in available_dbs],
+            len(description), len(hints_text),
+        )
 
         # Find query subdirs
         query_dirs = sorted(
@@ -169,13 +282,19 @@ def run_trials(
             query_id = query_dir.name
 
             for trial_num in range(1, trials + 1):
+                if (dataset, query_id, trial_num) in done_keys:
+                    logger.info(
+                        "Skip %s/%s trial %d/%d — already in results",
+                        dataset, query_id, trial_num, trials,
+                    )
+                    continue
                 logger.info(
                     "Running %s/%s trial %d/%d",
                     dataset, query_id, trial_num, trials,
                 )
                 t0 = time.monotonic()
                 try:
-                    result = run_agent(question, db_hints)
+                    result = run_agent(question, db_hints, dataset_context)
                     answer = result.answer
                     confidence = result.confidence
                     trace_id = result.trace_id
@@ -204,14 +323,14 @@ def run_trials(
                     "ground_truth": ground_truth[:200],
                     "duration_s": round(duration_s, 3),
                 })
+                # Checkpoint after every trial so SIGINT / kill leaves a
+                # consistent, resumable snapshot on disk.
+                _write_results(output_path, results)
 
-    # Write results
-    try:
-        with open(output_path, "w", encoding="utf-8") as fh:
-            json.dump(results, fh, indent=2, default=str)
-        logger.info("Results written to %s (%d entries)", output_path, len(results))
-    except OSError as exc:
-        logger.error("Failed to write results to %s: %s", output_path, exc)
+    # Final write (idempotent — ensures the file ends in a good state
+    # even if no new trials ran, e.g. a fully-resumed no-op run).
+    _write_results(output_path, results)
+    logger.info("Results written to %s (%d entries)", output_path, len(results))
 
     # Summary
     if results:
@@ -236,13 +355,17 @@ def main() -> None:
         "--datasets", type=str, nargs="+", default=DEFAULT_DATASETS,
         help=f"Datasets to run (default: {DEFAULT_DATASETS})",
     )
+    parser.add_argument(
+        "--no-resume", action="store_true",
+        help="Ignore any existing output file and start fresh.",
+    )
     args = parser.parse_args()
 
     logger.info(
-        "Starting trials: datasets=%s trials=%d output=%s",
-        args.datasets, args.trials, args.output,
+        "Starting trials: datasets=%s trials=%d output=%s resume=%s",
+        args.datasets, args.trials, args.output, not args.no_resume,
     )
-    run_trials(args.datasets, args.trials, args.output)
+    run_trials(args.datasets, args.trials, args.output, resume=not args.no_resume)
 
 
 if __name__ == "__main__":

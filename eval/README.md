@@ -13,6 +13,18 @@
   - `tool_call_trace` (the tool calls emitted by the agent for that query/trial)
 - `score_results.py` preserves trial-level `tool_call_trace` inside each `per_query` entry in `dab_detailed.json`.
 
+## Score Progression (Auto-Generated)
+- Every `score_results.py` run appends a dated entry to:
+  - `results/score_progression.jsonl`
+  - `results/score_progression.md`
+- Each entry includes:
+  - UTC timestamp
+  - numeric `pass@1`
+  - delta vs previous and first run
+  - datasets/trials metadata
+  - exact scoring command
+  - methodology notes
+
 ## Smoke Run
 ```bash
 python3 eval/run_trials.py --trials 2 --output results/smoke.json

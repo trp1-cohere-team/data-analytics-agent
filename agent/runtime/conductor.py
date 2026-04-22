@@ -345,12 +345,13 @@ class OracleForgeConductor:
                         answer_text = candidate
                         break
                     # Sanitizer rejected the reply (raw dicts, scaffolding, or
-                    # question echo) — fall through to synthesis instead.
+                    # question echo). Continue so the model can issue another
+                    # analytic call instead of finalizing a preview-like answer.
                     execution_evidence.append({
                         "error": "LLM reply rejected by sanitizer (raw output or echo).",
                         "step": step + 1,
                     })
-                    break
+                    continue
 
                 execution_evidence.append({
                     "error": "No executable tool call returned; provide one TOOL_CALL.",
@@ -1000,7 +1001,13 @@ class OracleForgeConductor:
             for n in by_token + by_desc:
                 if n not in merged:
                     merged.append(n)
-            filtered = merged if merged else names
+            # In dataset-scoped eval runs, avoid falling back to the full
+            # backend catalog (which can inject unrelated tables such as
+            # stock tickers into non-stock datasets). If we cannot map any
+            # table to the dataset/context, skip this backend section.
+            filtered = merged if merged else ([] if ds_lower else names)
+            if not filtered:
+                continue
             # Cap to keep prompt size bounded.
             capped = filtered[:15]
             omitted = len(filtered) - len(capped)
@@ -1616,7 +1623,7 @@ class OracleForgeConductor:
         sanitized = self._sanitize_answer(answer_text or "", question)
         if sanitized:
             answer_text = sanitized
-        elif not (answer_text or "").strip():
+        else:
             answer_text = "I'm not able to produce a reliable answer for this question. Please rephrase or be more specific."
 
         # --- Memory ---
@@ -2412,6 +2419,10 @@ class OracleForgeConductor:
         r"I cannot use the python tool|Based on the query results in the system prompt)",
         re.IGNORECASE,
     )
+    _RESULT_PREVIEW_LINE = re.compile(
+        r"^\s*Found\s+[\d,]+\s+result\(s\)",
+        re.IGNORECASE,
+    )
 
     # Bare acknowledgments that carry no new content of their own.
     # Matches 1–5 ack tokens strung together (e.g. "yes", "ok go ahead",
@@ -2544,6 +2555,8 @@ class OracleForgeConductor:
         norm_a = re.sub(r"[\s?.!]+$", "", cleaned.lower())
         if norm_a and norm_q and norm_a == norm_q:
             return ""
+        if cls._RESULT_PREVIEW_LINE.match(cleaned):
+            return ""
 
         return cleaned
 
@@ -2562,9 +2575,26 @@ class OracleForgeConductor:
         if not successful:
             return "I was not able to retrieve any data for this question."
 
+        def _is_schema_preview(item: dict) -> bool:
+            summary = item.get("result_summary") or {}
+            cols = [str(c).lower() for c in (summary.get("columns") or [])]
+            if cols and set(cols).issubset({"table_name", "column_name", "name"}):
+                return True
+            sample = summary.get("sample_rows") or []
+            if sample and all(isinstance(r, dict) for r in sample[:5]):
+                keys = {str(k).lower() for r in sample[:5] for k in r.keys()}
+                if keys and keys.issubset({"table_name", "column_name", "name"}):
+                    return True
+            return False
+
+        # Prefer evidence that looks like analytic query output rather than
+        # schema/table previews.
+        informative = [e for e in successful if not _is_schema_preview(e)]
+        source = informative if informative else successful
+
         # Build a clean, structured view of what the tools returned.
         blocks: list[str] = []
-        for idx, item in enumerate(successful[-5:], 1):
+        for idx, item in enumerate(source[-5:], 1):
             tool = item.get("tool", "tool")
             summary = item.get("result_summary") or self._summarize_result(item.get("result"))
             if "row_count" in summary:
@@ -2602,11 +2632,11 @@ class OracleForgeConductor:
         raw_answer = self._extract_answer(response)
         # If the LLM mis-routed into another tool call, refuse to leak internals.
         if not raw_answer or "TOOL_CALL:" in raw_answer.upper():
-            return self._deterministic_summary(question, successful)
+            return self._deterministic_summary(question, source)
 
         cleaned = self._sanitize_answer(raw_answer, question)
         if not cleaned:
-            return self._deterministic_summary(question, successful)
+            return self._deterministic_summary(question, source)
         return cleaned
 
     @staticmethod
@@ -2637,8 +2667,8 @@ class OracleForgeConductor:
             head = ", ".join(values[:10])
             extra = f" (+{row_count - len(values):,} more)" if row_count > len(values) else ""
             return (
-                f"Found {row_count:,} result(s). "
-                f"First {min(10, len(values))} {key.lower()}(s): {head}{extra}."
+                f"The query returned {row_count:,} row(s). "
+                f"Sample {min(10, len(values))} {key.lower()} value(s): {head}{extra}."
             )
 
         # Multi-column small result — render as a compact Markdown table.
@@ -2650,7 +2680,7 @@ class OracleForgeConductor:
                 "| " + " | ".join(str(row.get(k, ""))[:60] for k in keys) + " |"
                 for row in sample[:20] if isinstance(row, dict)
             )
-            return f"Found {row_count:,} result(s):\n\n{header}\n{divider}\n{body}"
+            return f"The query returned {row_count:,} row(s):\n\n{header}\n{divider}\n{body}"
 
         # Multi-column large result — summarize.
         sample_line = ""
@@ -2659,7 +2689,7 @@ class OracleForgeConductor:
             parts = [f"{k}={first[k]!r}" for k in list(first.keys())[:4]]
             sample_line = f" Example row: {', '.join(parts)}."
         return (
-            f"Found {row_count:,} result(s) with columns {cols[:6]}.{sample_line}"
+            f"The query returned {row_count:,} row(s) with columns {cols[:6]}.{sample_line}"
         )
 
     @staticmethod

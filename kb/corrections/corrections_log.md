@@ -22869,3 +22869,75 @@ SELECT Id FROM knowledge__kav LIMIT <NUM>
 - **Correct Approach**: Review and rewrite the query with correct syntax, table names, and column names.
 - **Retry**: 3
 - **Outcome**: pending
+
+### Correction — 2026-04-22T21:52:27.683177+00:00
+- **Session**: da55ff12-0286-47a6-b364-2dccea3b9ff1
+- **Category**: db-type
+- **Failed Query**:
+  ```
+SELECT COUNT(DISTINCT c.sample_repo_name) AS total_repos, SUM(CASE WHEN c.content LIKE <STR> THEN <NUM> ELSE <NUM> END) AS repos_with_copyright FROM contents c JOIN languages l ON c.sample_repo_name = l.repo_name WHERE l.language_description NOT LIKE <STR> AND c.sample_path = <STR>;
+  ```
+- **What Was Wrong**: connection_refused
+- **Correct Approach**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 1
+- **Outcome**: pending
+
+### Correction — 2026-04-22T21:52:30.853702+00:00
+- **Session**: da55ff12-0286-47a6-b364-2dccea3b9ff1
+- **Category**: db-type
+- **Failed Query**:
+  ```
+SELECT COUNT(DISTINCT c.sample_repo_name) AS total_repos, SUM(CASE WHEN c.content LIKE <STR> THEN <NUM> ELSE <NUM> END) AS repos_with_copyright FROM contents c JOIN languages l ON c.sample_repo_name = l.repo_name WHERE l.language_description NOT LIKE <STR> AND c.sample_path = <STR>;
+  ```
+- **What Was Wrong**: connection_refused
+- **Correct Approach**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 2
+- **Outcome**: pending
+
+### Correction — 2026-04-22T21:52:38.331606+00:00
+- **Session**: da55ff12-0286-47a6-b364-2dccea3b9ff1
+- **Category**: db-type
+- **Failed Query**:
+  ```
+SELECT COUNT(DISTINCT c.sample_repo_name) AS total_repos, SUM(CASE WHEN c.content LIKE <STR> THEN <NUM> ELSE <NUM> END) AS repos_with_copyright FROM contents c JOIN languages l ON c.sample_repo_name = l.repo_name WHERE l.language_description NOT LIKE <STR> AND c.sample_path = <STR>;
+  ```
+- **What Was Wrong**: connection_refused
+- **Correct Approach**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 3
+- **Outcome**: pending
+
+### Correction — 2026-04-22T21:52:46.829056+00:00
+- **Session**: da55ff12-0286-47a6-b364-2dccea3b9ff1
+- **Category**: db-type
+- **Failed Query**:
+  ```
+SELECT COUNT(DISTINCT c.sample_repo_name) AS total_repos, SUM(CASE WHEN c.content LIKE <STR> THEN <NUM> ELSE <NUM> END) AS copyright_repos FROM contents c JOIN languages l ON c.sample_repo_name = l.repo_name WHERE l.language_description NOT LIKE <STR> AND c.sample_path = <STR>
+  ```
+- **What Was Wrong**: connection_refused
+- **Correct Approach**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 1
+- **Outcome**: pending
+
+### Correction — 2026-04-22T21:52:51.233881+00:00
+- **Session**: da55ff12-0286-47a6-b364-2dccea3b9ff1
+- **Category**: db-type
+- **Failed Query**:
+  ```
+SELECT COUNT(DISTINCT c.sample_repo_name) AS total_repos, SUM(CASE WHEN c.content LIKE <STR> THEN <NUM> ELSE <NUM> END) AS copyright_repos FROM contents c JOIN languages l ON c.sample_repo_name = l.repo_name WHERE l.language_description NOT LIKE <STR> AND c.sample_path = <STR>
+  ```
+- **What Was Wrong**: connection_refused
+- **Correct Approach**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 2
+- **Outcome**: pending
+
+### Correction — 2026-04-22T21:52:53.730912+00:00
+- **Session**: da55ff12-0286-47a6-b364-2dccea3b9ff1
+- **Category**: db-type
+- **Failed Query**:
+  ```
+SELECT COUNT(DISTINCT c.sample_repo_name) AS total_repos, SUM(CASE WHEN c.content LIKE <STR> THEN <NUM> ELSE <NUM> END) AS copyright_repos FROM contents c JOIN languages l ON c.sample_repo_name = l.repo_name WHERE l.language_description NOT LIKE <STR> AND c.sample_path = <STR>
+  ```
+- **What Was Wrong**: connection_refused
+- **Correct Approach**: Verify the correct database tool is selected and the service is available.
+- **Retry**: 3
+- **Outcome**: pending

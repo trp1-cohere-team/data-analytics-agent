@@ -107,3 +107,8 @@ data/**/*.db
 data/**/*.sqlite
 data/**/*.duckdb
 data/duckdb/_postgres_sqlite_cache/
+
+# Local assistant/tooling metadata
+.aidlc-rule-details/
+.claude/
+.hypothesis/

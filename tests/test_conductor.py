@@ -184,6 +184,70 @@ class TestConductorOffline(unittest.TestCase):
         self.assertEqual(tool_name, "query_postgresql")
         self.assertIn("SELECT COUNT(*) AS row_count", params.get("sql", ""))
 
+    def test_sanitize_rejects_preview_style_result(self) -> None:
+        """Preview summaries must not be treated as final user answers."""
+        cleaned = OracleForgeConductor._sanitize_answer(
+            "Found 2,792 result(s). First 5 table_name(s): AAAU, AADR, AAME, AAWW, AAXJ.",
+            "Which repo has the most copies?",
+        )
+        self.assertEqual(cleaned, "")
+
+    def test_run_retries_when_llm_returns_preview_style_answer(self) -> None:
+        """A preview-style ANSWER should be rejected and retried within the loop."""
+        tool_call = {
+            "choices": [
+                {
+                    "message": {
+                        "content": (
+                            'TOOL_CALL: {"tool": "query_sqlite", '
+                            '"parameters": {"sql": "SELECT 1 AS n"}}'
+                        )
+                    }
+                }
+            ]
+        }
+        preview_answer = {
+            "choices": [
+                {
+                    "message": {
+                        "content": "ANSWER: Found 1 result(s). First 1 n(s): 1."
+                    }
+                }
+            ]
+        }
+        final_answer = {"choices": [{"message": {"content": "ANSWER: 1"}}]}
+
+        invoke_ok = InvokeResult(
+            success=True,
+            tool_name="query_sqlite",
+            result=[{"n": 1}],
+            error="",
+            error_type="",
+            db_type="sqlite",
+        )
+
+        with patch.object(
+            self.conductor,
+            "_call_llm",
+            side_effect=[tool_call, preview_answer, final_answer],
+        ):
+            with patch.object(self.conductor._mcp, "invoke_tool", return_value=invoke_ok):
+                result = self.conductor.run("Return n", ["sqlite"])
+
+        self.assertEqual(result.answer, "1")
+        self.assertEqual(len(result.tool_calls), 1)
+
+    def test_finalize_result_drops_unsanitized_preview_output(self) -> None:
+        """Finalizer should never leak sanitizer-rejected preview output."""
+        self.conductor._eval_mode = True  # pylint: disable=protected-access
+        result = self.conductor._finalize_result(  # pylint: disable=protected-access
+            question="test",
+            answer_text="Found 24 result(s). First 5 table_name(s): a, b, c, d, e.",
+            confidence=0.5,
+        )
+        self.assertIn("not able to produce a reliable answer", result.answer.lower())
+        self.assertNotIn("Found 24 result(s)", result.answer)
+
 
 if __name__ == "__main__":
     unittest.main()
